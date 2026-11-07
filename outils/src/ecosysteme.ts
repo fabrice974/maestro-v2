@@ -30,7 +30,8 @@ const git = (cwd: string, args: string) => {
 async function enEcoute(port?: number) {
   if (!port) return false;
   try {
-    await fetch(`http://localhost:${port}/`, { signal: AbortSignal.timeout(800), redirect: 'manual' });
+    // Délai généreux : la première requête après une période d'inactivité (ex. app .NET) peut dépasser 800 ms.
+    await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(3000), redirect: 'manual' });
     return true;
   } catch {
     return false;
