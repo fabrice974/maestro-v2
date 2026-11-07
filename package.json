@@ -18,6 +18,11 @@
     "audit:verifier": "tsx outils/src/audit-verifier.ts",
     "audit:exporter": "tsx outils/src/audit-exporter.ts",
     "generer:client": "npm run generer -w @maestro/client-backbone",
+    "generer:modeles": "tsx outils/src/generer-modeles.ts",
+    "incidents": "tsx outils/src/incidents.ts",
+    "annuler": "tsx outils/src/annuler.ts",
+    "test:ui": "tsx outils/src/test-ui.ts",
+    "smoke:sharepoint": "tsx outils/src/smoke-sharepoint.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
