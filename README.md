@@ -111,6 +111,20 @@ conformité, désinvestissement.
    `apps/debourse-dotnet/README.md`).
 3. Aucun changement dans Camunda.
 
+## Après une mise en pause du cluster d'essai
+
+Un cluster d'essai inactif est mis en pause automatiquement par Camunda. Le 2026-11-07, au réveil
+de `dev-cl`, toutes ses données avaient été effacées (processus, décisions, instances). Avant chaque
+démo :
+
+```bash
+npm run verifier:cluster    # ✔/✖ pour chaque modèle attendu + instances en cours
+npm run deployer            # si des modèles manquent
+```
+
+Les dossiers du registre local dont l'instance a disparu se marquent avec
+`npm run annuler -- INV-… --registre-seulement`.
+
 ## Redéployer sur un nouveau cluster (fin de l'essai)
 
 1. Créer le cluster et un client API (portée Orchestration), puis mettre à jour `CAMUNDA_*` dans

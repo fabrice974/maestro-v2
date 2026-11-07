@@ -73,6 +73,10 @@ commité) contient le client API Camunda et la config SharePoint ; modèle : `.e
   (port 4000 encore occupé → `EADDRINUSE`). Retrouver le PID via `Get-NetTCPConnection -LocalPort 4000`.
 - Le registre local référence des instances du cluster : après changement de cluster, supprimer
   `donnees/passerelle.sqlite`.
+- **Mise en pause automatique du cluster d'essai** : après quelques heures d'inactivité, Camunda met
+  `dev-cl` en pause ; au réveil (2026-11-07), toutes les données avaient disparu (définitions et
+  instances). Après un réveil : `npm run verifier:cluster`, puis `npm run deployer`, et marquer les
+  dossiers orphelins avec `npm run annuler -- INV-… --registre-seulement`.
 - Le cluster `dev-cl` est un essai (expiration ≈ 2026-12-07) ; « Authorizations disabled » est voulu
   pour l'instant (sécurité appliquée par la passerelle).
 

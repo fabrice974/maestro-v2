@@ -20,6 +20,7 @@
     "generer:client": "npm run generer -w @maestro/client-backbone",
     "generer:modeles": "tsx outils/src/generer-modeles.ts",
     "incidents": "tsx outils/src/incidents.ts",
+    "verifier:cluster": "tsx outils/src/verifier-cluster.ts",
     "annuler": "tsx outils/src/annuler.ts",
     "test:ui": "tsx outils/src/test-ui.ts",
     "smoke:sharepoint": "tsx outils/src/smoke-sharepoint.ts",
