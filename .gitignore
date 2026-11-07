@@ -1,0 +1,23 @@
+# Secrets et configuration locale (identifiants Camunda SaaS, etc.)
+.env
+.env.*
+!.env.example
+*.local.*
+
+# Worktrees Claude Code
+.claude/worktrees/
+.claude/settings.local.json
+
+# Éditeurs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Builds courants
+node_modules/
+dist/
+build/
+target/
+bin/
+obj/
