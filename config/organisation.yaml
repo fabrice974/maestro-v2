@@ -1,0 +1,52 @@
+# Organisation fictive de la caisse d'investissement.
+# Les BPMN/DMN et le catalogue ne connaissent que des RÔLES. Ce fichier dit qui les tient.
+# Un membre de rôle est soit l'id d'une personne, soit « equipe:<id> » (tous les membres de l'équipe).
+# Changement organisationnel = modifier ce fichier (aucun redéploiement BPMN) — voir docs/playbooks.
+
+equipes:
+  credit-prive: { nom: Crédit privé }
+  placement-prive: { nom: Placement privé }
+  infrastructure: { nom: Infrastructure }
+  juridique: { nom: Affaires juridiques }
+  tresorerie: { nom: Trésorerie }
+  conformite: { nom: Conformité }
+  gestion-portefeuille: { nom: Gestion de portefeuille }
+  comite: { nom: Comité d'investissement }
+  externes: { nom: Contributeurs externes }
+
+personnes:
+  - { id: alice, nom: Alice Tremblay, equipe: credit-prive, titre: Analyste principale }
+  - { id: bruno, nom: Bruno Gagnon, equipe: credit-prive, titre: Directeur d'investissement }
+  - { id: chloe, nom: Chloé Roy, equipe: placement-prive, titre: Analyste }
+  - { id: david, nom: David Côté, equipe: infrastructure, titre: Directeur d'investissement }
+  - { id: yanis, nom: Yanis Pelletier, equipe: infrastructure, titre: Analyste }
+  - { id: emma, nom: Emma Bouchard, equipe: juridique, titre: Juriste }
+  - { id: farid, nom: Farid Nadeau, equipe: comite, titre: Membre du comité }
+  - { id: gina, nom: Gina Lavoie, equipe: comite, titre: Présidente du comité / administratrice }
+  - { id: hugo, nom: Hugo Morin, equipe: tresorerie, titre: Agent de trésorerie }
+  - { id: ines, nom: Inès Fortin, equipe: tresorerie, titre: Cheffe de trésorerie }
+  - { id: julie, nom: Julie Ouellet, equipe: conformite, titre: Conseillère conformité }
+  - { id: kevin, nom: Kevin Bélanger, equipe: gestion-portefeuille, titre: Gestionnaire de portefeuille }
+  - { id: lea, nom: Léa Girard, equipe: externes, titre: Associée — Cabinet comptable Boréal, externe: true }
+  - { id: marc, nom: Marc Simard, equipe: externes, titre: Ingénieur — Ingénierie Laurentide, externe: true }
+  - { id: nora, nom: Nora Gauthier, equipe: externes, titre: Conseillère — Horizon ESG, externe: true }
+
+roles:
+  analyste-credit-prive: [equipe:credit-prive]
+  analyste-placement-prive: [equipe:placement-prive]
+  analyste-infrastructure: [equipe:infrastructure]
+  directeur-investissement: [bruno, david]
+  comite-investissement: [farid, gina, bruno]
+  comite-conseil: [gina]
+  juriste: [equipe:juridique]
+  gestionnaire-portefeuille: [equipe:gestion-portefeuille]
+  tresorerie: [equipe:tresorerie]
+  conformite: [equipe:conformite]
+  revue-financiere: [lea, alice]
+  revue-juridique: [emma]
+  revue-fiscale: [lea]
+  revue-esg: [nora]
+  revue-technique: [marc]
+  revue-assurances: [emma]
+  # Reçoit les escalades quand une tâche dépasse son délai.
+  superviseur-taches: [bruno, ines]

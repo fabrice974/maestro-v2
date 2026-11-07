@@ -1,0 +1,256 @@
+# Catalogue des tâches métier. Le BPMN ne transmet que « typeTache » ; tout le reste vient d'ici.
+# Modifier un champ, un document requis ou un délai = modifier ce fichier, sans redéployer de BPMN.
+#
+# roleRequis accepte des gabarits {{variable}} résolus avec les variables du processus
+#   (ex. analyste-{{classeActif}} → analyste-credit-prive).
+# Types de champ : texte | nombre | montant | date | booleen | choix
+# regle (dates) : passe (≤ aujourd'hui) | futur (≥ aujourd'hui)
+# decision : liste des décisions possibles ; la valeur est renvoyée au BPMN dans resultat.decision.
+
+# ───────────────────────── Deal flow ─────────────────────────
+dealflow.qualifier-occasion:
+  titre: Qualifier l'occasion d'investissement
+  phase: deal-flow
+  roleRequis: analyste-{{classeActif}}
+  delaiSla: P2D
+  champs:
+    - { nom: dateReceptionTeaser, libelle: Date de réception du teaser, type: date, obligatoire: true, regle: passe }
+    - { nom: sourceOccasion, libelle: Source, type: choix, choix: [mandataire, co-investisseur, direct], obligatoire: true }
+    - { nom: resumeThese, libelle: Thèse d'investissement (résumé), type: texte, obligatoire: true }
+  documents:
+    - { type: teaser, libelle: Teaser / mémorandum d'information, obligatoire: true }
+
+dealflow.analyse-preliminaire:
+  titre: Analyse préliminaire et mémo initial
+  phase: deal-flow
+  roleRequis: analyste-{{classeActif}}
+  delaiSla: P5D
+  champs:
+    - { nom: rendementCible, libelle: Rendement cible (TRI %), type: nombre, obligatoire: true }
+    - { nom: dureeAnnees, libelle: Durée (années), type: nombre, obligatoire: true }
+  decision: [poursuivre, abandonner]
+  documents:
+    - { type: memo-preliminaire, libelle: Mémo d'investissement préliminaire, obligatoire: true }
+
+dealflow.approbation-principe:
+  titre: Approbation de principe (comité)
+  phase: deal-flow
+  roleRequis: comite-investissement
+  delaiSla: P3D
+  champs:
+    - { nom: dateComite, libelle: Date du comité, type: date, obligatoire: true, regle: passe }
+  decision: [approuve, refuse]
+  documents:
+    - { type: proces-verbal, libelle: Extrait de procès-verbal, obligatoire: false }
+
+dealflow.structuration:
+  titre: Structuration et négociation de la feuille de modalités
+  phase: deal-flow
+  roleRequis: analyste-{{classeActif}}
+  delaiSla: P10D
+  champs:
+    - { nom: montantEngagement, libelle: Montant de l'engagement ($), type: montant, obligatoire: true }
+    - { nom: modalitesCles, libelle: Modalités clés (taux, marge, garanties), type: texte, obligatoire: true }
+    - { nom: dateCloturePrevue, libelle: Date de clôture prévue, type: date, obligatoire: true, regle: futur }
+  documents:
+    - { type: feuille-modalites, libelle: Feuille de modalités négociée, obligatoire: true }
+
+dealflow.approbation-finale:
+  titre: Approbation finale
+  phase: deal-flow
+  # Instance décidée par le DMN niveau-approbation (comite-investissement ou comite-conseil).
+  roleRequis: "{{instanceApprobation}}"
+  delaiSla: P5D
+  champs:
+    - { nom: dateDecision, libelle: Date de la décision, type: date, obligatoire: true, regle: passe }
+  decision: [approuve, refuse]
+  documents:
+    - { type: resolution, libelle: Résolution d'approbation, obligatoire: true }
+
+dealflow.documentation-juridique:
+  titre: Documentation juridique et clôture
+  phase: deal-flow
+  roleRequis: juriste
+  delaiSla: P15D
+  champs:
+    - { nom: dateSignature, libelle: Date de signature, type: date, obligatoire: true, regle: passe }
+  documents:
+    - { type: convention-signee, libelle: Convention signée, obligatoire: true }
+
+dealflow.assigner-mandat:
+  titre: Assigner le mandat au gestionnaire de portefeuille
+  phase: deal-flow
+  roleRequis: directeur-investissement
+  delaiSla: P2D
+  champs:
+    - { nom: gestionnaireAssigne, libelle: Gestionnaire assigné (id), type: texte, obligatoire: true }
+    - { nom: dateAssignation, libelle: Date d'assignation, type: date, obligatoire: true, regle: passe }
+  documents: []
+
+# ───────────────────────── Revue diligente ─────────────────────────
+revue.chantier:
+  titre: Chantier de revue diligente
+  phase: revue-diligente
+  # Un contributeur par chantier (financière, juridique, fiscale, esg, technique, assurances).
+  roleRequis: revue-{{chantier}}
+  delaiSla: P10D
+  champs:
+    - { nom: niveauRisque, libelle: Niveau de risque, type: choix, choix: [faible, moyen, eleve], obligatoire: true }
+    - { nom: constatsCles, libelle: Constats clés, type: texte, obligatoire: true }
+  documents:
+    - { type: rapport-chantier, libelle: Rapport du chantier, obligatoire: true }
+
+revue.synthese:
+  titre: Synthèse et recommandation de revue diligente
+  phase: revue-diligente
+  roleRequis: analyste-{{classeActif}}
+  delaiSla: P3D
+  champs:
+    - { nom: conditions, libelle: Conditions ou réserves, type: texte, obligatoire: false }
+  decision: [favorable, favorable-avec-conditions, defavorable]
+  documents:
+    - { type: synthese-revue, libelle: Synthèse de revue diligente, obligatoire: true }
+
+# ───────────────────────── Déboursé (application .NET) ─────────────────────────
+debourse.demande:
+  titre: Demande de déboursé
+  phase: debourse
+  roleRequis: gestionnaire-portefeuille
+  delaiSla: P2D
+  champs:
+    - { nom: montantTirage, libelle: Montant du tirage ($), type: montant, obligatoire: true }
+    - { nom: dateValeur, libelle: Date de valeur, type: date, obligatoire: true, regle: futur }
+    - { nom: compteBeneficiaire, libelle: Compte bénéficiaire (fictif), type: texte, obligatoire: true }
+  documents:
+    - { type: avis-tirage, libelle: Avis de tirage de l'emprunteur, obligatoire: true }
+
+debourse.conditions-prealables:
+  titre: Vérifier les conditions préalables
+  phase: debourse
+  roleRequis: juriste
+  delaiSla: P3D
+  champs:
+    - { nom: cpOpinionJuridique, libelle: Opinion juridique reçue, type: booleen, obligatoire: true }
+    - { nom: cpAssurances, libelle: Certificats d'assurance reçus, type: booleen, obligatoire: true }
+    - { nom: cpGaranties, libelle: Sûretés publiées, type: booleen, obligatoire: true }
+    - { nom: dateValiditeCertificat, libelle: Validité du certificat de conformité, type: date, obligatoire: true, regle: futur }
+  documents:
+    - { type: certificat-conformite, libelle: Certificat de conformité de l'emprunteur, obligatoire: true }
+
+debourse.kyc:
+  titre: Contrôle KYC / LCB-FT
+  phase: debourse
+  roleRequis: conformite
+  delaiSla: P2D
+  champs:
+    - { nom: dateVerification, libelle: Date de vérification, type: date, obligatoire: true, regle: passe }
+  decision: [conforme, non-conforme]
+  documents: []
+
+debourse.preparer-instruction:
+  titre: Préparer l'instruction de paiement
+  phase: debourse
+  roleRequis: tresorerie
+  delaiSla: P1D
+  champs:
+    - { nom: referencePaiement, libelle: Référence de paiement, type: texte, obligatoire: true }
+  documents:
+    - { type: instruction-paiement, libelle: Instruction de paiement, obligatoire: true }
+
+debourse.approuver:
+  titre: Approuver le déboursé (quatre yeux)
+  phase: debourse
+  roleRequis: tresorerie
+  delaiSla: P1D
+  champs: []
+  decision: [approuve, refuse]
+  documents: []
+
+debourse.approuver-conformite:
+  titre: Approbation conformité du déboursé
+  phase: debourse
+  roleRequis: conformite
+  delaiSla: P1D
+  champs: []
+  decision: [approuve, refuse]
+  documents: []
+
+# ───────────────────────── Suivi périodique ─────────────────────────
+suivi.collecte-mensuelle:
+  titre: Collecte mensuelle de l'information financière
+  phase: suivi-periodique
+  roleRequis: gestionnaire-portefeuille
+  delaiSla: P10D
+  champs:
+    - { nom: periode, libelle: Période (AAAA-MM), type: texte, obligatoire: true }
+    - { nom: detteNette, libelle: Dette nette ($), type: montant, obligatoire: true }
+    - { nom: baiia, libelle: BAIIA sur 12 mois ($), type: montant, obligatoire: true }
+    - { nom: fluxDisponibles, libelle: Flux disponibles pour le service de la dette ($), type: montant, obligatoire: true }
+    - { nom: serviceDette, libelle: Service de la dette ($), type: montant, obligatoire: true }
+  documents:
+    - { type: etats-financiers, libelle: États financiers mensuels, obligatoire: true }
+    - { type: attestation-conformite, libelle: Attestation de conformité aux clauses, obligatoire: true }
+
+suivi.plan-action:
+  titre: Plan d'action (mise sous surveillance)
+  phase: suivi-periodique
+  roleRequis: gestionnaire-portefeuille
+  delaiSla: P5D
+  champs:
+    - { nom: mesures, libelle: Mesures correctives, type: texte, obligatoire: true }
+    - { nom: dateRevue, libelle: Date de revue, type: date, obligatoire: true, regle: futur }
+  documents:
+    - { type: plan-action, libelle: Plan d'action, obligatoire: true }
+
+suivi.decision-maintien:
+  titre: Décision de maintien ou de sortie (bris de clause)
+  phase: suivi-periodique
+  roleRequis: directeur-investissement
+  delaiSla: P3D
+  champs:
+    - { nom: justification, libelle: Justification, type: texte, obligatoire: true }
+  decision: [garder, desinvestir]
+  documents: []
+
+# ───────────────────────── Désinvestissement ─────────────────────────
+desinvest.these-sortie:
+  titre: Thèse de sortie
+  phase: desinvestissement
+  roleRequis: gestionnaire-portefeuille
+  delaiSla: P5D
+  champs:
+    - { nom: modeSortie, libelle: Mode de sortie, type: choix, choix: [vente-secondaire, remboursement-anticipe, refinancement], obligatoire: true }
+    - { nom: motif, libelle: Motif, type: texte, obligatoire: true }
+  documents:
+    - { type: these-sortie, libelle: Thèse de sortie, obligatoire: true }
+
+desinvest.evaluation:
+  titre: Évaluation de la position
+  phase: desinvestissement
+  roleRequis: analyste-{{classeActif}}
+  delaiSla: P5D
+  champs:
+    - { nom: valeurEstimee, libelle: Valeur estimée ($), type: montant, obligatoire: true }
+    - { nom: dateEvaluation, libelle: Date d'évaluation, type: date, obligatoire: true, regle: passe }
+  documents:
+    - { type: rapport-evaluation, libelle: Rapport d'évaluation, obligatoire: true }
+
+desinvest.approbation:
+  titre: Approbation du désinvestissement
+  phase: desinvestissement
+  roleRequis: "{{instanceApprobation}}"
+  delaiSla: P3D
+  champs: []
+  decision: [approuve, refuse]
+  documents: []
+
+desinvest.execution:
+  titre: Exécution de la sortie et clôture
+  phase: desinvestissement
+  roleRequis: tresorerie
+  delaiSla: P5D
+  champs:
+    - { nom: dateCloture, libelle: Date de clôture, type: date, obligatoire: true, regle: passe }
+    - { nom: produitNet, libelle: Produit net encaissé ($), type: montant, obligatoire: true }
+  documents:
+    - { type: avis-cloture, libelle: Avis de clôture, obligatoire: true }

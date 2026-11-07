@@ -1,0 +1,50 @@
+# Politique de sécurité appliquée par la passerelle (seul client Camunda).
+# 1) Chaque application ne peut compléter que SES types de tâches et émettre SES événements.
+# 2) Séparation des tâches : une personne ne peut pas compléter une tâche si elle a complété
+#    l'une des tâches « interditSi » sur le même dossier.
+# Jetons : valeurs de DÉMONSTRATION. Cible : Entra ID (client credentials par application).
+
+applications:
+  deal-flow:
+    nom: Application Deal flow
+    jeton: demo-jeton-deal-flow
+    url: http://localhost:4101
+    typesTache: ["dealflow.*"]
+    evenements: []
+    peutCreerDossier: true
+  revue-diligente:
+    nom: Application Revue diligente
+    jeton: demo-jeton-revue-diligente
+    url: http://localhost:4102
+    typesTache: ["revue.*"]
+    evenements: []
+  debourse:
+    nom: Application Déboursé (.NET)
+    jeton: demo-jeton-debourse
+    url: http://localhost:4103
+    typesTache: ["debourse.*"]
+    evenements: [demande-tirage]
+  suivi-periodique:
+    nom: Application Suivi périodique
+    jeton: demo-jeton-suivi-periodique
+    url: http://localhost:4104
+    typesTache: ["suivi.*"]
+    evenements: [remboursement-complet, decision-desinvestir]
+  desinvestissement:
+    nom: Application Désinvestissement
+    jeton: demo-jeton-desinvestissement
+    url: http://localhost:4105
+    typesTache: ["desinvest.*"]
+    evenements: []
+
+separationTaches:
+  - tache: dealflow.approbation-principe
+    interditSi: [dealflow.analyse-preliminaire]
+  - tache: dealflow.approbation-finale
+    interditSi: [dealflow.analyse-preliminaire, dealflow.structuration]
+  - tache: debourse.approuver
+    interditSi: [debourse.preparer-instruction, debourse.demande]
+  - tache: debourse.approuver-conformite
+    interditSi: [debourse.preparer-instruction, debourse.demande]
+  - tache: desinvest.approbation
+    interditSi: [desinvest.evaluation, desinvest.these-sortie]
