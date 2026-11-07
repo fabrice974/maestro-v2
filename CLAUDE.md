@@ -62,6 +62,11 @@ commité) contient le client API Camunda et la config SharePoint ; modèle : `.e
   Camunda Modeler, modifier le fichier, pas le générateur.
 - `npm run scenario` modifie de vrais fichiers de `modeles/`/`config/` (sauvegarde dans
   `donnees/scenarios/`) : toujours `--annuler` avant de commiter.
+- SLA : le timer de `tache-metier` est un `timeDate` sur `echeanceSla` (renvoyé par `tache.ouvrir`,
+  repoussé par `tache.escalader`). Ne pas revenir à un `timeDuration` : un refus remettrait le SLA à zéro.
+- Séparation des tâches : l'historique est filtré sur `contexte.cycle` (script « Ouvrir le cycle » au
+  début de `debourse` et `desinvestissement`). Toute nouvelle règle de séparation sur un processus
+  répétable doit avoir son cycle.
 - Clients générés (NSwag) envoient `null` pour les propriétés absentes : les schémas zod de l'API
   utilisent `nullish()`.
 - Windows : arrêter une tâche de fond `npm run …` ne tue pas toujours le processus `node` enfant

@@ -26,7 +26,10 @@ export function enregistrerWorkers(moteur: Moteur, s: Services): string[] {
     'debourse.executer-paiement': async (job) => {
       // Paiement SIMULÉ : génère un avis d'exécution déposé dans SharePoint et audité.
       const v = job.variables;
-      const reference = `PMT-${String(v.dossierId)}-${Date.now().toString(36).toUpperCase()}`;
+      // Idempotence : un job réactivé (délai dépassé, échec de complétion) ne paie pas deux fois.
+      const deja = s.journal.lister({ dossierId: String(v.dossierId) }).find((e) => e.action === 'paiement.execute' && e.cleInstance === job.cleInstance);
+      if (deja) return { paiement: { ...(deja.details as object), avis: deja.document } };
+      const reference = `PMT-${String(v.dossierId)}-${job.cleInstance.slice(-8)}`;
       const montant = Number((v.demande as { champs?: { montantTirage?: number } })?.champs?.montantTirage ?? v.montant ?? 0);
       const avis = [
         "AVIS D'EXÉCUTION DE PAIEMENT (SIMULATION — PoC Maestro)",

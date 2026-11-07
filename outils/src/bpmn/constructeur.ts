@@ -178,6 +178,15 @@ export class Processus {
     );
   }
 
+  /** Attente jusqu'à une date absolue (expression FEEL renvoyant une date et heure). */
+  attendreDate(id: string, nom: string, date: string) {
+    return this.ajouter(
+      id,
+      (e, s) =>
+        `<bpmn:intermediateCatchEvent id="${id}" name="${esc(nom)}">${lignes(e, s)}<bpmn:timerEventDefinition><bpmn:timeDate xsi:type="bpmn:tFormalExpression">${esc(date)}</bpmn:timeDate></bpmn:timerEventDefinition></bpmn:intermediateCatchEvent>`,
+    );
+  }
+
   /** Événement de bordure « message » (non interrompant par défaut). */
   bordureMessage(id: string, nom: string, attacheA: string, message: string, correlation: string, interrompant = false) {
     const ref = this.message(message, correlation);

@@ -12,6 +12,8 @@ applications:
     typesTache: ["dealflow.*"]
     evenements: []
     peutCreerDossier: true
+    # Pilote du dossier (origination) : vue complète.
+    lectureDossierComplete: true
   revue-diligente:
     nom: Application Revue diligente
     jeton: demo-jeton-revue-diligente
@@ -24,6 +26,8 @@ applications:
     url: http://localhost:4103
     typesTache: ["debourse.*"]
     evenements: [demande-tirage]
+    # Application la plus auditée : consulte la piste d'audit complète du dossier.
+    lectureDossierComplete: true
   suivi-periodique:
     nom: Application Suivi périodique
     jeton: demo-jeton-suivi-periodique

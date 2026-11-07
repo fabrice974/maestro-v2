@@ -34,11 +34,11 @@
       <bpmn:outgoing>Flux_8</bpmn:outgoing>
       <bpmn:messageEventDefinition messageRef="Msg_tache_refusee" />
     </bpmn:intermediateCatchEvent>
-    <bpmn:intermediateCatchEvent id="sla" name="Délai SLA dépassé">
+    <bpmn:intermediateCatchEvent id="sla" name="Échéance SLA dépassée">
       <bpmn:incoming>Flux_10</bpmn:incoming>
       <bpmn:outgoing>Flux_11</bpmn:outgoing>
       <bpmn:timerEventDefinition>
-        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=delaiSla</bpmn:timeDuration>
+        <bpmn:timeDate xsi:type="bpmn:tFormalExpression">=date and time(echeanceSla)</bpmn:timeDate>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:serviceTask id="clore" name="Clore et auditer">

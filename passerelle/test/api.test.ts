@@ -135,6 +135,55 @@ describe('API de la passerelle', () => {
     expect(r.json().code).toBe('SEPARATION_TACHES');
   });
 
+  it('séparation des tâches limitée au cycle : au tirage suivant, l’ancien approbateur peut préparer et l’autre approuver', async () => {
+    const { dossierId } = (await nouveauDossier()).json();
+    const prep1 = await s.ouvrirTache(job({ typeTache: 'debourse.preparer-instruction', dossierId, cycle: 'debourse-1' }));
+    s.registre.completerTache(prep1.tacheId, 'hugo', {});
+    const appro1 = await s.ouvrirTache(job({ typeTache: 'debourse.approuver', dossierId, cycle: 'debourse-1' }));
+    s.registre.completerTache(appro1.tacheId, 'ines', {});
+    const prep2 = await s.ouvrirTache(job({ typeTache: 'debourse.preparer-instruction', dossierId, cycle: 'debourse-2' }));
+    s.registre.completerTache(prep2.tacheId, 'ines', {});
+    const appro2 = await s.ouvrirTache(job({ typeTache: 'debourse.approuver', dossierId, cycle: 'debourse-2' }));
+    const r = await app.inject({ method: 'POST', url: `/taches/${appro2.tacheId}/completer`, headers: { ...DEBOURSE, 'x-utilisateur': 'hugo' }, payload: { decision: 'approuve' } });
+    expect(r.statusCode).toBe(200);
+  });
+
+  it('une application sans lecture complète ne voit que ses tâches, pièces et audit du dossier', async () => {
+    const { dossierId } = (await nouveauDossier()).json();
+    await s.ouvrirTache(job({ typeTache: 'debourse.demande', dossierId }));
+    await s.ouvrirTache(job({ typeTache: 'revue.chantier', dossierId, chantier: 'financiere' }));
+    const REVUE = { authorization: 'Bearer demo-jeton-revue-diligente' };
+    const vue = (await app.inject({ method: 'GET', url: `/dossiers/${dossierId}`, headers: REVUE })).json();
+    expect(vue.taches.map((t: { typeTache: string }) => t.typeTache)).toEqual(['revue.chantier']);
+    expect(vue.audit.every((e: { details?: { typeTache?: string } }) => e.details?.typeTache !== 'debourse.demande')).toBe(true);
+    const complete = (await app.inject({ method: 'GET', url: `/dossiers/${dossierId}`, headers: DEBOURSE })).json();
+    expect(complete.taches).toHaveLength(2);
+  });
+
+  it('dépôt : refusé sans le rôle ; deux tâches ne s’écrasent pas (nom unique par tâche)', async () => {
+    const { dossierId } = (await nouveauDossier()).json();
+    const a = await s.ouvrirTache(job({ typeTache: 'revue.chantier', dossierId, chantier: 'financiere' }));
+    const b = await s.ouvrirTache(job({ typeTache: 'revue.chantier', dossierId, chantier: 'juridique' }));
+    await expect(s.deposerDocument(a.tacheId, 'rapport-chantier', 'r.txt', Buffer.from('x'), 'revue-diligente', 'kevin')).rejects.toMatchObject({ code: 'ROLE_ABSENT' });
+    const ra = await s.deposerDocument(a.tacheId, 'rapport-chantier', 'rapport.txt', Buffer.from('A'), 'revue-diligente', 'lea');
+    const rb = await s.deposerDocument(b.tacheId, 'rapport-chantier', 'rapport.txt', Buffer.from('B'), 'revue-diligente', 'emma');
+    expect(ra.nom).not.toBe(rb.nom);
+  });
+
+  it('Camunda injoignable à la complétion → 503 et la tâche redevient ouverte (nouvel essai possible)', async () => {
+    const { dossierId } = (await nouveauDossier()).json();
+    const { tacheId } = await tacheDebourseApprouver(dossierId);
+    const publier = moteur.publier.bind(moteur);
+    moteur.publier = async () => {
+      throw new Error('réseau');
+    };
+    const essai = () => app.inject({ method: 'POST', url: `/taches/${tacheId}/completer`, headers: { ...DEBOURSE, 'x-utilisateur': 'ines' }, payload: { decision: 'approuve' } });
+    expect((await essai()).statusCode).toBe(503);
+    expect(s.registre.tache(tacheId)?.statut).toBe('ouverte');
+    moteur.publier = publier;
+    expect((await essai()).statusCode).toBe(200);
+  });
+
   it('accepte decision: null envoyé par un client généré (C#/NSwag)', async () => {
     const { dossierId } = (await nouveauDossier()).json();
     const { tacheId } = await s.ouvrirTache(job({ typeTache: 'debourse.preparer-instruction', dossierId }));

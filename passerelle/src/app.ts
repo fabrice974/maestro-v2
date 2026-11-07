@@ -97,15 +97,25 @@ export function creerApp(s: Services, opts: OptionsApp = {}) {
 
     api.get('/dossiers', async () => s.registre.dossiers());
 
+    /**
+     * Vue d'un dossier selon l'application : complète si securite.yaml l'accorde (lectureDossierComplete),
+     * sinon limitée à SES tâches, à leurs pièces et aux entrées d'audit qui la concernent.
+     */
+    function vueDossier(dossierId: string, application: string) {
+      const complet = s.g.applications.get(application)?.lectureDossierComplete === true;
+      const taches = s.registre.taches({ dossierId }).filter((t) => complet || t.application === application);
+      const mesTaches = new Set(taches.map((t) => t.tacheId));
+      return {
+        taches,
+        documents: s.registre.documents({ dossierId }).filter((d) => complet || mesTaches.has(d.tacheId)),
+        audit: s.journal.lister({ dossierId }).filter((e) => complet || e.application === application || (e.tacheId && mesTaches.has(e.tacheId))),
+      };
+    }
+
     api.get<{ Params: { dossierId: string } }>('/dossiers/:dossierId', async (req) => {
       const d = s.registre.dossier(req.params.dossierId);
       if (!d) throw new ErreurMetier(404, 'DOSSIER_INCONNU', `Dossier ${req.params.dossierId} inconnu`);
-      return {
-        ...d,
-        taches: s.registre.taches({ dossierId: d.dossierId }),
-        documents: s.registre.documents({ dossierId: d.dossierId }),
-        audit: s.journal.lister({ dossierId: d.dossierId }),
-      };
+      return { ...d, ...vueDossier(d.dossierId, req.application) };
     });
 
     api.post<{ Params: { dossierId: string; type: string } }>('/dossiers/:dossierId/evenements/:type', async (req, rep) => {
@@ -153,7 +163,11 @@ export function creerApp(s: Services, opts: OptionsApp = {}) {
       return s.completer(req.params.tacheId, CompletionSchema.parse(req.body ?? {}), req.application, req.utilisateur);
     });
 
-    api.get<{ Querystring: { dossierId?: string } }>('/audit', async (req) => s.journal.lister({ dossierId: req.query.dossierId }));
+    api.get<{ Querystring: { dossierId?: string } }>('/audit', async (req) => {
+      const complet = s.g.applications.get(req.application)?.lectureDossierComplete === true;
+      if (req.query.dossierId) return vueDossier(req.query.dossierId, req.application).audit;
+      return complet ? s.journal.lister() : s.journal.lister().filter((e) => e.application === req.application);
+    });
     api.get('/audit/verification', async () => s.journal.verifier());
   });
 

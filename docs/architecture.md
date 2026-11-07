@@ -58,6 +58,23 @@ Statut : **implémentée dans la PoC** (2026-11-07). La conception et ses justif
     (`npm run audit:verifier`), exporté chaque mois en JSONL avec un manifeste dans SharePoint
     (`npm run audit:exporter`).
 
+11. **Échéance SLA absolue** : `tache.ouvrir` renvoie `echeanceSla` (date). Le timer `timeDate` de
+    `tache-metier` ne repart donc pas à zéro sur un refus ; seule une escalade repousse l'échéance.
+12. **Séparation des tâches par cycle** : chaque déboursé (premier ou tirage) et chaque
+    désinvestissement ouvre un `cycle`, et la règle « préparateur ≠ approbateur » s'applique dans le
+    cycle. Sans cela, au fil des tirages, plus personne ne pourrait approuver.
+13. **Lecture restreinte** : une application ne lit que ses tâches, leurs pièces et l'audit qui la
+    concerne, sauf si `securite.yaml` lui accorde `lectureDossierComplete` (deal flow, déboursé).
+14. **Robustesse** :
+    - si Camunda est injoignable à la complétion, la tâche redevient ouverte (réponse 503) ;
+    - un événement dont la publication échoue n'est pas marqué reçu ;
+    - le paiement simulé est idempotent ;
+    - les noms de pièces incluent l'identifiant de la tâche, pour qu'aucun fichier n'en écrase un autre.
+
+Limite connue : un tirage en cours peut se terminer après la clôture du dossier, car le
+remboursement complet ne l'interrompt pas. En cible, il faudra attendre la fin des tirages avant de
+clôturer.
+
 ## Les deux sens de communication
 
 | Sens | Mécanisme | Exemple |

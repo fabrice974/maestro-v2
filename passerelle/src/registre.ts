@@ -123,6 +123,14 @@ export class Registre {
     return r.changes === 1;
   }
 
+  rouvrirTache(tacheId: string): void {
+    this.db.prepare("UPDATE taches SET statut = 'ouverte', completee_par = NULL, completee_le = NULL, resultat = NULL WHERE tache_id = ?").run(tacheId);
+  }
+
+  oublierEvenement(evenementId: string): void {
+    this.db.prepare('DELETE FROM evenements WHERE evenement_id = ?').run(evenementId);
+  }
+
   incrementer(tacheId: string, champ: 'escalades' | 'refus', echeance?: string): void {
     this.db.prepare(`UPDATE taches SET ${champ} = ${champ} + 1${echeance ? ', echeance = ?' : ''} WHERE tache_id = ?`).run(
       ...(echeance ? [echeance, tacheId] : [tacheId]),

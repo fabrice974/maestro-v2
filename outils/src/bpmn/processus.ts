@@ -13,7 +13,8 @@ export function tacheMetier(): Processus {
     .evenementiel('attente', 'En attente de l’application')
     .attendreMessage('completee', 'Tâche complétée et validée', 'tache.completee', '=tacheId')
     .attendreMessage('refusee', 'Tentative refusée (sécurité / validation)', 'tache.refusee', '=tacheId')
-    .attendreDelai('sla', 'Délai SLA dépassé', '=delaiSla')
+    // Échéance absolue : un refus ne remet pas le compteur à zéro ; l'escalade repousse echeanceSla.
+    .attendreDate('sla', 'Échéance SLA dépassée', '=date and time(echeanceSla)')
     .service('clore', 'Clore et auditer', 'tache.clore')
     .service('refus', 'Consigner le refus', 'tache.consigner-refus')
     .service('escalade', 'Escalader au superviseur', 'tache.escalader')
@@ -97,6 +98,8 @@ export function dealFlow(revueConformite = false): Processus {
 export function debourse(): Processus {
   return new Processus('debourse', 'Déboursé', 'Orchestration fortement auditée : conditions préalables, KYC, instruction, quatre yeux, conformité, paiement.')
     .debut('debut', 'Déboursé demandé')
+    // Chaque déboursé (premier ou tirage) est un cycle : la séparation des tâches s'y applique.
+    .script('cycle', 'Ouvrir le cycle de déboursé', '="debourse-" + string(now())', 'cycle')
     .tache('demande', 'Demande de déboursé', 'debourse.demande', 'demande')
     .et('fourche')
     .tache('cp', 'Vérifier les conditions préalables', 'debourse.conditions-prealables', 'conditionsPrealables')
@@ -119,7 +122,7 @@ export function debourse(): Processus {
     .ou('fusion-refus')
     .script('marquer-refus', 'Déboursé refusé', '="refuse"', 'issueDebourse')
     .fin('fin-refus', 'Déboursé refusé')
-    .chaine('debut', 'demande', 'fourche')
+    .chaine('debut', 'cycle', 'demande', 'fourche')
     .relier('fourche', 'cp')
     .relier('fourche', 'kyc')
     .relier('cp', 'jonction')
@@ -185,6 +188,7 @@ export function suiviPeriodique(): Processus {
 export function desinvestissement(): Processus {
   return new Processus('desinvestissement', 'Désinvestissement', 'Thèse de sortie, évaluation, approbation, exécution.')
     .debut('debut', 'Sortie envisagée')
+    .script('cycle', 'Ouvrir le cycle de désinvestissement', '="desinvestissement-" + string(now())', 'cycle')
     .tache('these', 'Thèse de sortie', 'desinvest.these-sortie', 'theseSortie')
     .tache('evaluation', 'Évaluation de la position', 'desinvest.evaluation', 'evaluation')
     .regle('regle-approbation', "Déterminer l'instance d'approbation", 'niveau-approbation', 'instanceApprobation', {
@@ -198,7 +202,7 @@ export function desinvestissement(): Processus {
     .fin('fin-sorti', 'Position sortie')
     .script('marquer-refus', 'Sortie refusée', '="refuse"', 'issueDesinvestissement')
     .fin('fin-refus', 'Sortie refusée')
-    .chaine('debut', 'these', 'evaluation', 'regle-approbation', 'approbation', 'gw-approuve')
+    .chaine('debut', 'cycle', 'these', 'evaluation', 'regle-approbation', 'approbation', 'gw-approuve')
     .relier('gw-approuve', 'execution', { nom: 'approuvé', condition: 'approbationSortie.decision = "approuve"' })
     .relier('gw-approuve', 'marquer-refus', { nom: 'refusé', condition: 'approbationSortie.decision != "approuve"' })
     .chaine('execution', 'marquer-sorti', 'fin-sorti')

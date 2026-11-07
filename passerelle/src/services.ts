@@ -59,25 +59,24 @@ export class Services {
   async creerDossier(entree: NouveauDossier, application: string, utilisateur: string): Promise<Dossier> {
     const app = this.g.applications.get(application);
     if (!app?.peutCreerDossier) throw new ErreurMetier(403, 'APPLICATION_NON_AUTORISEE', `L'application « ${application} » ne peut pas créer de dossier.`);
+    // Réservation synchrone de l'identifiant AVANT tout await : deux créations simultanées ne peuvent pas obtenir le même.
     const dossierId = this.registre.prochainDossierId();
-    const { url } = await this.depot.creerDossier([dossierId]);
-    for (const sous of Object.values(DOSSIERS_PHASE)) await this.depot.creerDossier([dossierId, sous]);
-    const dossier: Dossier = {
-      ...entree,
-      dossierId,
-      phase: 'deal-flow',
-      statut: 'actif',
-      urlDocuments: url,
-      creePar: utilisateur,
-      creeLe: new Date().toISOString(),
-    };
+    const dossier: Dossier = { ...entree, dossierId, phase: 'deal-flow', statut: 'actif', creePar: utilisateur, creeLe: new Date().toISOString() };
     this.registre.creerDossier(dossier);
-    const { cleInstance, version } = await this.moteur.demarrer(
-      'backbone',
-      { ...entree, dossierId, delaiSuivi: this.options.delaiSuivi },
-      dossierId,
-    );
-    this.registre.majDossier(dossierId, { cleInstance });
+    let url: string;
+    let cleInstance: string;
+    let version: number;
+    try {
+      ({ url } = await this.depot.creerDossier([dossierId]));
+      for (const sous of Object.values(DOSSIERS_PHASE)) await this.depot.creerDossier([dossierId, sous]);
+      ({ cleInstance, version } = await this.moteur.demarrer('backbone', { ...entree, dossierId, delaiSuivi: this.options.delaiSuivi }, dossierId));
+    } catch (e) {
+      this.registre.majDossier(dossierId, { statut: 'abandonne' });
+      this.journal.ajouter({ acteur: utilisateur, application, action: 'dossier.echec-creation', dossierId, details: { erreur: (e as Error).message } });
+      throw e;
+    }
+    dossier.urlDocuments = url;
+    this.registre.majDossier(dossierId, { cleInstance, urlDocuments: url });
     this.journal.ajouter({
       acteur: utilisateur,
       application,
@@ -98,7 +97,13 @@ export class Services {
     }
     if (!this.registre.dossier(dossierId)) throw new ErreurMetier(404, 'DOSSIER_INCONNU', `Dossier ${dossierId} inconnu`);
     if (!this.registre.enregistrerEvenement(evenementId, dossierId, type)) return { doublon: true };
-    await this.moteur.publier(type, dossierId, { [type.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())]: donnees }, evenementId);
+    try {
+      await this.moteur.publier(type, dossierId, { [type.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())]: donnees }, evenementId);
+    } catch (e) {
+      // Publication échouée : l'événement n'est pas considéré comme reçu, un nouvel essai sera traité.
+      this.registre.oublierEvenement(evenementId);
+      throw e;
+    }
     this.journal.ajouter({ acteur: utilisateur, application, action: 'evenement.emis', dossierId, details: { type, evenementId, donnees } });
     return { doublon: false };
   }
@@ -124,7 +129,8 @@ export class Services {
     const delaiSla = ajusterDuree(def.delaiSla, this.options.facteurSla);
     const maintenant = new Date();
     const contexte: Record<string, unknown> = {};
-    for (const k of ['nom', 'contrepartie', 'classeActif', 'montant', 'secteur', 'chantier', 'instanceApprobation', 'montantTirage', 'periode', 'statutCovenants']) {
+    // « cycle » délimite la séparation des tâches (un déboursé, un désinvestissement) : voir debourse.bpmn.
+    for (const k of ['nom', 'contrepartie', 'classeActif', 'montant', 'secteur', 'chantier', 'instanceApprobation', 'montantTirage', 'periode', 'statutCovenants', 'cycle']) {
       if (v[k] !== undefined) contexte[k] = v[k];
     }
     const tache = this.registre.ouvrirTache({
@@ -150,14 +156,18 @@ export class Services {
       details: { typeTache, roleRequis, application: app.id, echeance: tache.echeance },
     });
     this.options.notifier?.(app.url, app.jeton, { tacheId: tache.tacheId, typeTache, dossierId }).catch(() => undefined);
-    return { tacheId: tache.tacheId, roleRequis, delaiSla };
+    // Échéance ABSOLUE (timer timeDate) : un refus ne la remet pas à zéro ; seule une escalade la repousse.
+    return { tacheId: tache.tacheId, roleRequis, delaiSla, echeanceSla: tache.echeance };
   }
 
   async escalader(job: JobRecu) {
     const tacheId = String(job.variables.tacheId);
     const t = this.registre.tache(tacheId);
     const delai = String(job.variables.delaiSla ?? 'PT60S');
-    this.registre.incrementer(tacheId, 'escalades', new Date(Date.now() + dureeEnSecondes(delai) * 1000).toISOString());
+    // Idempotent si le job est réessayé : l'échéance repart de l'échéance dépassée, pas de « maintenant ».
+    const base = Math.max(Date.parse(String(job.variables.echeanceSla ?? '')) || 0, Date.now() - 1000);
+    const nouvelleEcheance = new Date(base + dureeEnSecondes(delai) * 1000).toISOString();
+    this.registre.incrementer(tacheId, 'escalades', nouvelleEcheance);
     const superviseurs = this.g.roles.get('superviseur-taches') ?? [];
     this.journal.ajouter({
       acteur: 'backbone',
@@ -168,7 +178,7 @@ export class Services {
       cleInstance: job.cleInstance,
       details: { typeTache: t?.typeTache, superviseurs, escalades: (t?.escalades ?? 0) + 1 },
     });
-    return { escalades: (t?.escalades ?? 0) + 1 };
+    return { escalades: (t?.escalades ?? 0) + 1, echeanceSla: nouvelleEcheance };
   }
 
   async consignerRefus(job: JobRecu) {
@@ -235,7 +245,13 @@ export class Services {
     if (!def.documents.some((d) => d.type === type)) {
       throw new ErreurMetier(422, 'TYPE_DOCUMENT_INCONNU', `Le type de document « ${type} » n'est pas attendu pour ${t.typeTache}`);
     }
-    const nomFinal = `${type}__${nomFichier}`;
+    // Seules les personnes habilitées à la tâche peuvent y verser des pièces.
+    if (!(this.g.roles.get(t.roleRequis) ?? []).includes(utilisateur)) {
+      this.journal.ajouter({ acteur: utilisateur, application, action: 'document.refuse', dossierId: t.dossierId, tacheId, details: { type, code: 'ROLE_ABSENT' } });
+      throw new ErreurMetier(403, 'ROLE_ABSENT', `« ${utilisateur} » ne détient pas le rôle « ${t.roleRequis} » requis pour déposer sur cette tâche.`);
+    }
+    // L'identifiant de tâche rend le nom unique : un document n'en écrase jamais un autre (chantiers parallèles, mois, tirages).
+    const nomFinal = `${type}__${tacheId.slice(0, 8)}__${nomFichier}`;
     const ref = await this.depot.deposer([t.dossierId, DOSSIERS_PHASE[def.phase] ?? def.phase], nomFinal, contenu);
     const deposeLe = new Date().toISOString();
     this.registre.ajouterDocument({ ...ref, tacheId, dossierId: t.dossierId, type, deposePar: utilisateur, deposeLe });
@@ -253,8 +269,11 @@ export class Services {
     if (!t) throw new ErreurMetier(404, 'TACHE_INCONNUE', `Tâche ${tacheId} inconnue`);
     if (t.statut !== 'ouverte') throw new ErreurMetier(409, 'TACHE_DEJA_COMPLETEE', `La tâche a déjà été complétée par ${t.completeePar}`);
     const def = this.definition(t.typeTache);
+    // Séparation des tâches limitée au cycle courant (un déboursé, un désinvestissement) : sinon, au fil des
+    // tirages, plus personne ne pourrait approuver.
     const historique = this.registre
       .taches({ dossierId: t.dossierId, statut: 'completee' })
+      .filter((h) => h.contexte.cycle === t.contexte.cycle)
       .map((h) => ({ typeTache: h.typeTache, completeePar: h.completeePar ?? '' }));
 
     const refus: Refus | null = verifierCompletion(this.g, {
@@ -287,7 +306,14 @@ export class Services {
     if (!this.registre.completerTache(tacheId, utilisateur, resultat)) {
       throw new ErreurMetier(409, 'TACHE_DEJA_COMPLETEE', 'La tâche vient d’être complétée par une autre requête');
     }
-    await this.moteur.publier('tache.completee', tacheId, { resultat }, `${tacheId}:completee`);
+    try {
+      await this.moteur.publier('tache.completee', tacheId, { resultat }, `${tacheId}:completee`);
+    } catch (e) {
+      // Camunda injoignable : la tâche redevient ouverte pour qu'un nouvel essai aboutisse (messageId idempotent).
+      this.registre.rouvrirTache(tacheId);
+      this.journal.ajouter({ acteur: utilisateur, application, action: 'tache.echec-publication', dossierId: t.dossierId, tacheId, details: { erreur: (e as Error).message } });
+      throw new ErreurMetier(503, 'BACKBONE_INDISPONIBLE', 'Le backbone n’a pas pu être informé ; réessayer.');
+    }
     this.journal.ajouter({
       acteur: utilisateur,
       application,

@@ -39,14 +39,14 @@ export class MoteurCamunda implements Moteur {
   }
 
   async publier(nom: string, cleCorrelation: string, variables: Record<string, unknown>, messageId: string) {
-    await this.client.publishMessage({ name: nom, correlationKey: cleCorrelation, variables, messageId, timeToLive: 3_600_000 });
+    await this.client.publishMessage({ name: nom, correlationKey: cleCorrelation, variables, messageId, timeToLive: 30 * 24 * 3_600_000 }); // 30 jours : un fait métier arrivé pendant une autre étape attend le prochain point d'attente
   }
 
   ecouter(type: string, gestionnaire: GestionnaireJob) {
     const w = this.client.createJobWorker({
       jobType: type,
       maxParallelJobs: 8,
-      jobTimeoutMs: 30_000,
+      jobTimeoutMs: 120_000,
       pollIntervalMs: 300,
       jobHandler: async (job) => {
         const recu: JobRecu = {

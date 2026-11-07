@@ -51,6 +51,8 @@ export const SecuriteSchema = z.object({
       typesTache: z.array(z.string()),
       evenements: z.array(z.string()).default([]),
       peutCreerDossier: z.boolean().default(false),
+      /** Voir toutes les tâches, pièces et l'audit d'un dossier (sinon : seulement ce qui concerne l'application). */
+      lectureDossierComplete: z.boolean().default(false),
     }),
   ),
   separationTaches: z.array(z.object({ tache: z.string(), interditSi: z.array(z.string()) })).default([]),

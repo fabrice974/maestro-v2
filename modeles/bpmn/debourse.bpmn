@@ -5,6 +5,13 @@
     <bpmn:startEvent id="debut" name="Déboursé demandé">
       <bpmn:outgoing>Flux_1</bpmn:outgoing>
     </bpmn:startEvent>
+    <bpmn:scriptTask id="cycle" name="Ouvrir le cycle de déboursé">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;debourse-&#34; + string(now())" resultVariable="cycle" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_1</bpmn:incoming>
+      <bpmn:outgoing>Flux_2</bpmn:outgoing>
+    </bpmn:scriptTask>
     <bpmn:callActivity id="demande" name="Demande de déboursé">
       <bpmn:extensionElements>
         <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
@@ -13,13 +20,13 @@
           <zeebe:output source="=resultat" target="demande" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_1</bpmn:incoming>
-      <bpmn:outgoing>Flux_2</bpmn:outgoing>
-    </bpmn:callActivity>
-    <bpmn:parallelGateway id="fourche" name="">
       <bpmn:incoming>Flux_2</bpmn:incoming>
       <bpmn:outgoing>Flux_3</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:parallelGateway id="fourche" name="">
+      <bpmn:incoming>Flux_3</bpmn:incoming>
       <bpmn:outgoing>Flux_4</bpmn:outgoing>
+      <bpmn:outgoing>Flux_5</bpmn:outgoing>
     </bpmn:parallelGateway>
     <bpmn:callActivity id="cp" name="Vérifier les conditions préalables">
       <bpmn:extensionElements>
@@ -29,8 +36,8 @@
           <zeebe:output source="=resultat" target="conditionsPrealables" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_3</bpmn:incoming>
-      <bpmn:outgoing>Flux_5</bpmn:outgoing>
+      <bpmn:incoming>Flux_4</bpmn:incoming>
+      <bpmn:outgoing>Flux_6</bpmn:outgoing>
     </bpmn:callActivity>
     <bpmn:callActivity id="kyc" name="Contrôle KYC / LCB-FT">
       <bpmn:extensionElements>
@@ -40,18 +47,18 @@
           <zeebe:output source="=resultat" target="kyc" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_4</bpmn:incoming>
-      <bpmn:outgoing>Flux_6</bpmn:outgoing>
+      <bpmn:incoming>Flux_5</bpmn:incoming>
+      <bpmn:outgoing>Flux_7</bpmn:outgoing>
     </bpmn:callActivity>
     <bpmn:parallelGateway id="jonction" name="">
-      <bpmn:incoming>Flux_5</bpmn:incoming>
       <bpmn:incoming>Flux_6</bpmn:incoming>
-      <bpmn:outgoing>Flux_7</bpmn:outgoing>
-    </bpmn:parallelGateway>
-    <bpmn:exclusiveGateway id="gw-kyc" name="KYC conforme ?">
       <bpmn:incoming>Flux_7</bpmn:incoming>
       <bpmn:outgoing>Flux_8</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:exclusiveGateway id="gw-kyc" name="KYC conforme ?">
+      <bpmn:incoming>Flux_8</bpmn:incoming>
       <bpmn:outgoing>Flux_9</bpmn:outgoing>
+      <bpmn:outgoing>Flux_10</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:callActivity id="instruction" name="Préparer l&#39;instruction de paiement">
       <bpmn:extensionElements>
@@ -61,8 +68,8 @@
           <zeebe:output source="=resultat" target="instruction" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_8</bpmn:incoming>
-      <bpmn:outgoing>Flux_10</bpmn:outgoing>
+      <bpmn:incoming>Flux_9</bpmn:incoming>
+      <bpmn:outgoing>Flux_11</bpmn:outgoing>
     </bpmn:callActivity>
     <bpmn:businessRuleTask id="regle-controles" name="Déterminer les contrôles requis">
       <bpmn:extensionElements>
@@ -78,8 +85,8 @@
           <zeebe:executionListener eventType="end" retries="3" type="regle.consigner" />
         </zeebe:executionListeners>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_10</bpmn:incoming>
-      <bpmn:outgoing>Flux_11</bpmn:outgoing>
+      <bpmn:incoming>Flux_11</bpmn:incoming>
+      <bpmn:outgoing>Flux_12</bpmn:outgoing>
     </bpmn:businessRuleTask>
     <bpmn:callActivity id="approuver" name="Approuver le déboursé (quatre yeux)">
       <bpmn:extensionElements>
@@ -89,18 +96,18 @@
           <zeebe:output source="=resultat" target="approbation" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_11</bpmn:incoming>
-      <bpmn:outgoing>Flux_12</bpmn:outgoing>
-    </bpmn:callActivity>
-    <bpmn:exclusiveGateway id="gw-approuve" name="Approuvé ?">
       <bpmn:incoming>Flux_12</bpmn:incoming>
       <bpmn:outgoing>Flux_13</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-approuve" name="Approuvé ?">
+      <bpmn:incoming>Flux_13</bpmn:incoming>
       <bpmn:outgoing>Flux_14</bpmn:outgoing>
+      <bpmn:outgoing>Flux_15</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:exclusiveGateway id="gw-conformite" name="Conformité requise ?">
-      <bpmn:incoming>Flux_13</bpmn:incoming>
-      <bpmn:outgoing>Flux_15</bpmn:outgoing>
+      <bpmn:incoming>Flux_14</bpmn:incoming>
       <bpmn:outgoing>Flux_16</bpmn:outgoing>
+      <bpmn:outgoing>Flux_17</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:callActivity id="conformite" name="Approbation conformité">
       <bpmn:extensionElements>
@@ -110,157 +117,161 @@
           <zeebe:output source="=resultat" target="approbationConformite" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_15</bpmn:incoming>
-      <bpmn:outgoing>Flux_17</bpmn:outgoing>
+      <bpmn:incoming>Flux_16</bpmn:incoming>
+      <bpmn:outgoing>Flux_18</bpmn:outgoing>
     </bpmn:callActivity>
     <bpmn:exclusiveGateway id="gw-conformite-ok" name="Approuvé ?">
-      <bpmn:incoming>Flux_17</bpmn:incoming>
-      <bpmn:outgoing>Flux_18</bpmn:outgoing>
+      <bpmn:incoming>Flux_18</bpmn:incoming>
       <bpmn:outgoing>Flux_19</bpmn:outgoing>
+      <bpmn:outgoing>Flux_20</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:exclusiveGateway id="fusion-paiement" name="">
-      <bpmn:incoming>Flux_16</bpmn:incoming>
-      <bpmn:incoming>Flux_18</bpmn:incoming>
-      <bpmn:outgoing>Flux_20</bpmn:outgoing>
+      <bpmn:incoming>Flux_17</bpmn:incoming>
+      <bpmn:incoming>Flux_19</bpmn:incoming>
+      <bpmn:outgoing>Flux_21</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="payer" name="Exécuter le paiement (simulé)">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="debourse.executer-paiement" retries="3" />
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_20</bpmn:incoming>
-      <bpmn:outgoing>Flux_21</bpmn:outgoing>
+      <bpmn:incoming>Flux_21</bpmn:incoming>
+      <bpmn:outgoing>Flux_22</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:scriptTask id="marquer-debourse" name="Déboursé effectué">
       <bpmn:extensionElements>
         <zeebe:script expression="=&#34;debourse&#34;" resultVariable="issueDebourse" />
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_21</bpmn:incoming>
-      <bpmn:outgoing>Flux_22</bpmn:outgoing>
+      <bpmn:incoming>Flux_22</bpmn:incoming>
+      <bpmn:outgoing>Flux_23</bpmn:outgoing>
     </bpmn:scriptTask>
     <bpmn:endEvent id="fin-ok" name="Fonds déboursés">
-      <bpmn:incoming>Flux_22</bpmn:incoming>
+      <bpmn:incoming>Flux_23</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:exclusiveGateway id="fusion-refus" name="">
-      <bpmn:incoming>Flux_9</bpmn:incoming>
-      <bpmn:incoming>Flux_14</bpmn:incoming>
-      <bpmn:incoming>Flux_19</bpmn:incoming>
-      <bpmn:outgoing>Flux_23</bpmn:outgoing>
+      <bpmn:incoming>Flux_10</bpmn:incoming>
+      <bpmn:incoming>Flux_15</bpmn:incoming>
+      <bpmn:incoming>Flux_20</bpmn:incoming>
+      <bpmn:outgoing>Flux_24</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:scriptTask id="marquer-refus" name="Déboursé refusé">
       <bpmn:extensionElements>
         <zeebe:script expression="=&#34;refuse&#34;" resultVariable="issueDebourse" />
       </bpmn:extensionElements>
-      <bpmn:incoming>Flux_23</bpmn:incoming>
-      <bpmn:outgoing>Flux_24</bpmn:outgoing>
+      <bpmn:incoming>Flux_24</bpmn:incoming>
+      <bpmn:outgoing>Flux_25</bpmn:outgoing>
     </bpmn:scriptTask>
     <bpmn:endEvent id="fin-refus" name="Déboursé refusé">
-      <bpmn:incoming>Flux_24</bpmn:incoming>
+      <bpmn:incoming>Flux_25</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="demande" />
-    <bpmn:sequenceFlow id="Flux_2" sourceRef="demande" targetRef="fourche" />
-    <bpmn:sequenceFlow id="Flux_3" sourceRef="fourche" targetRef="cp" />
-    <bpmn:sequenceFlow id="Flux_4" sourceRef="fourche" targetRef="kyc" />
-    <bpmn:sequenceFlow id="Flux_5" sourceRef="cp" targetRef="jonction" />
-    <bpmn:sequenceFlow id="Flux_6" sourceRef="kyc" targetRef="jonction" />
-    <bpmn:sequenceFlow id="Flux_7" sourceRef="jonction" targetRef="gw-kyc" />
-    <bpmn:sequenceFlow id="Flux_8" name="conforme" sourceRef="gw-kyc" targetRef="instruction">
+    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="cycle" />
+    <bpmn:sequenceFlow id="Flux_2" sourceRef="cycle" targetRef="demande" />
+    <bpmn:sequenceFlow id="Flux_3" sourceRef="demande" targetRef="fourche" />
+    <bpmn:sequenceFlow id="Flux_4" sourceRef="fourche" targetRef="cp" />
+    <bpmn:sequenceFlow id="Flux_5" sourceRef="fourche" targetRef="kyc" />
+    <bpmn:sequenceFlow id="Flux_6" sourceRef="cp" targetRef="jonction" />
+    <bpmn:sequenceFlow id="Flux_7" sourceRef="kyc" targetRef="jonction" />
+    <bpmn:sequenceFlow id="Flux_8" sourceRef="jonction" targetRef="gw-kyc" />
+    <bpmn:sequenceFlow id="Flux_9" name="conforme" sourceRef="gw-kyc" targetRef="instruction">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=kyc.decision = "conforme"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_9" name="non conforme" sourceRef="gw-kyc" targetRef="fusion-refus">
+    <bpmn:sequenceFlow id="Flux_10" name="non conforme" sourceRef="gw-kyc" targetRef="fusion-refus">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=kyc.decision != "conforme"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_10" sourceRef="instruction" targetRef="regle-controles" />
-    <bpmn:sequenceFlow id="Flux_11" sourceRef="regle-controles" targetRef="approuver" />
-    <bpmn:sequenceFlow id="Flux_12" sourceRef="approuver" targetRef="gw-approuve" />
-    <bpmn:sequenceFlow id="Flux_13" name="approuvé" sourceRef="gw-approuve" targetRef="gw-conformite">
+    <bpmn:sequenceFlow id="Flux_11" sourceRef="instruction" targetRef="regle-controles" />
+    <bpmn:sequenceFlow id="Flux_12" sourceRef="regle-controles" targetRef="approuver" />
+    <bpmn:sequenceFlow id="Flux_13" sourceRef="approuver" targetRef="gw-approuve" />
+    <bpmn:sequenceFlow id="Flux_14" name="approuvé" sourceRef="gw-approuve" targetRef="gw-conformite">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbation.decision = "approuve"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_14" name="refusé" sourceRef="gw-approuve" targetRef="fusion-refus">
+    <bpmn:sequenceFlow id="Flux_15" name="refusé" sourceRef="gw-approuve" targetRef="fusion-refus">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbation.decision != "approuve"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_15" name="oui" sourceRef="gw-conformite" targetRef="conformite">
+    <bpmn:sequenceFlow id="Flux_16" name="oui" sourceRef="gw-conformite" targetRef="conformite">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=conformiteRequise = true</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_16" name="non" sourceRef="gw-conformite" targetRef="fusion-paiement">
+    <bpmn:sequenceFlow id="Flux_17" name="non" sourceRef="gw-conformite" targetRef="fusion-paiement">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=conformiteRequise != true</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_17" sourceRef="conformite" targetRef="gw-conformite-ok" />
-    <bpmn:sequenceFlow id="Flux_18" name="approuvé" sourceRef="gw-conformite-ok" targetRef="fusion-paiement">
+    <bpmn:sequenceFlow id="Flux_18" sourceRef="conformite" targetRef="gw-conformite-ok" />
+    <bpmn:sequenceFlow id="Flux_19" name="approuvé" sourceRef="gw-conformite-ok" targetRef="fusion-paiement">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationConformite.decision = "approuve"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_19" name="refusé" sourceRef="gw-conformite-ok" targetRef="fusion-refus">
+    <bpmn:sequenceFlow id="Flux_20" name="refusé" sourceRef="gw-conformite-ok" targetRef="fusion-refus">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationConformite.decision != "approuve"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flux_20" sourceRef="fusion-paiement" targetRef="payer" />
-    <bpmn:sequenceFlow id="Flux_21" sourceRef="payer" targetRef="marquer-debourse" />
-    <bpmn:sequenceFlow id="Flux_22" sourceRef="marquer-debourse" targetRef="fin-ok" />
-    <bpmn:sequenceFlow id="Flux_23" sourceRef="fusion-refus" targetRef="marquer-refus" />
-    <bpmn:sequenceFlow id="Flux_24" sourceRef="marquer-refus" targetRef="fin-refus" />
+    <bpmn:sequenceFlow id="Flux_21" sourceRef="fusion-paiement" targetRef="payer" />
+    <bpmn:sequenceFlow id="Flux_22" sourceRef="payer" targetRef="marquer-debourse" />
+    <bpmn:sequenceFlow id="Flux_23" sourceRef="marquer-debourse" targetRef="fin-ok" />
+    <bpmn:sequenceFlow id="Flux_24" sourceRef="fusion-refus" targetRef="marquer-refus" />
+    <bpmn:sequenceFlow id="Flux_25" sourceRef="marquer-refus" targetRef="fin-refus" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_debourse">
     <bpmndi:BPMNPlane id="BPMNPlane_debourse" bpmnElement="debourse">
       <bpmndi:BPMNShape id="debut_di" bpmnElement="debut">
         <dc:Bounds x="57" y="52" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="demande_di" bpmnElement="demande">
+      <bpmndi:BPMNShape id="cycle_di" bpmnElement="cycle">
         <dc:Bounds x="175" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="demande_di" bpmnElement="demande">
+        <dc:Bounds x="325" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="fourche_di" bpmnElement="fourche">
-        <dc:Bounds x="350" y="45" width="50" height="50" />
+        <dc:Bounds x="500" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="cp_di" bpmnElement="cp">
-        <dc:Bounds x="475" y="30" width="100" height="80" />
+        <dc:Bounds x="625" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="jonction_di" bpmnElement="jonction">
-        <dc:Bounds x="650" y="45" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gw-kyc_di" bpmnElement="gw-kyc" isMarkerVisible="true">
         <dc:Bounds x="800" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="instruction_di" bpmnElement="instruction">
-        <dc:Bounds x="925" y="30" width="100" height="80" />
+      <bpmndi:BPMNShape id="gw-kyc_di" bpmnElement="gw-kyc" isMarkerVisible="true">
+        <dc:Bounds x="950" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="regle-controles_di" bpmnElement="regle-controles">
+      <bpmndi:BPMNShape id="instruction_di" bpmnElement="instruction">
         <dc:Bounds x="1075" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="approuver_di" bpmnElement="approuver">
+      <bpmndi:BPMNShape id="regle-controles_di" bpmnElement="regle-controles">
         <dc:Bounds x="1225" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gw-approuve_di" bpmnElement="gw-approuve" isMarkerVisible="true">
-        <dc:Bounds x="1400" y="45" width="50" height="50" />
+      <bpmndi:BPMNShape id="approuver_di" bpmnElement="approuver">
+        <dc:Bounds x="1375" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="gw-conformite_di" bpmnElement="gw-conformite" isMarkerVisible="true">
+      <bpmndi:BPMNShape id="gw-approuve_di" bpmnElement="gw-approuve" isMarkerVisible="true">
         <dc:Bounds x="1550" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-conformite_di" bpmnElement="gw-conformite" isMarkerVisible="true">
+        <dc:Bounds x="1700" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="conformite_di" bpmnElement="conformite">
-        <dc:Bounds x="1675" y="30" width="100" height="80" />
+        <dc:Bounds x="1825" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="gw-conformite-ok_di" bpmnElement="gw-conformite-ok" isMarkerVisible="true">
-        <dc:Bounds x="1850" y="45" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="fusion-paiement_di" bpmnElement="fusion-paiement" isMarkerVisible="true">
         <dc:Bounds x="2000" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="payer_di" bpmnElement="payer">
-        <dc:Bounds x="2125" y="30" width="100" height="80" />
+      <bpmndi:BPMNShape id="fusion-paiement_di" bpmnElement="fusion-paiement" isMarkerVisible="true">
+        <dc:Bounds x="2150" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="marquer-debourse_di" bpmnElement="marquer-debourse">
+      <bpmndi:BPMNShape id="payer_di" bpmnElement="payer">
         <dc:Bounds x="2275" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="marquer-debourse_di" bpmnElement="marquer-debourse">
+        <dc:Bounds x="2425" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="fin-ok_di" bpmnElement="fin-ok">
-        <dc:Bounds x="2457" y="52" width="36" height="36" />
+        <dc:Bounds x="2607" y="52" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="fusion-refus_di" bpmnElement="fusion-refus" isMarkerVisible="true">
-        <dc:Bounds x="2600" y="45" width="50" height="50" />
+        <dc:Bounds x="2750" y="45" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="marquer-refus_di" bpmnElement="marquer-refus">
-        <dc:Bounds x="2725" y="30" width="100" height="80" />
+        <dc:Bounds x="2875" y="30" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="fin-refus_di" bpmnElement="fin-refus">
-        <dc:Bounds x="2907" y="52" width="36" height="36" />
+        <dc:Bounds x="3057" y="52" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="kyc_di" bpmnElement="kyc">
-        <dc:Bounds x="475" y="170" width="100" height="80" />
+        <dc:Bounds x="625" y="170" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flux_1_di" bpmnElement="Flux_1">
         <di:waypoint x="93" y="70" />
@@ -268,38 +279,38 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_2_di" bpmnElement="Flux_2">
         <di:waypoint x="275" y="70" />
-        <di:waypoint x="350" y="70" />
+        <di:waypoint x="325" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_3_di" bpmnElement="Flux_3">
-        <di:waypoint x="400" y="70" />
-        <di:waypoint x="475" y="70" />
+        <di:waypoint x="425" y="70" />
+        <di:waypoint x="500" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_4_di" bpmnElement="Flux_4">
-        <di:waypoint x="375" y="95" />
-        <di:waypoint x="375" y="210" />
-        <di:waypoint x="475" y="210" />
+        <di:waypoint x="550" y="70" />
+        <di:waypoint x="625" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_5_di" bpmnElement="Flux_5">
-        <di:waypoint x="575" y="70" />
-        <di:waypoint x="650" y="70" />
+        <di:waypoint x="525" y="95" />
+        <di:waypoint x="525" y="210" />
+        <di:waypoint x="625" y="210" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flux_7_di" bpmnElement="Flux_7">
-        <di:waypoint x="700" y="70" />
+      <bpmndi:BPMNEdge id="Flux_6_di" bpmnElement="Flux_6">
+        <di:waypoint x="725" y="70" />
         <di:waypoint x="800" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_8_di" bpmnElement="Flux_8">
         <di:waypoint x="850" y="70" />
-        <di:waypoint x="925" y="70" />
+        <di:waypoint x="950" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_9_di" bpmnElement="Flux_9">
-        <di:waypoint x="825" y="95" />
-        <di:waypoint x="825" y="140" />
-        <di:waypoint x="2625" y="140" />
-        <di:waypoint x="2625" y="95" />
+        <di:waypoint x="1000" y="70" />
+        <di:waypoint x="1075" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_10_di" bpmnElement="Flux_10">
-        <di:waypoint x="1025" y="70" />
-        <di:waypoint x="1075" y="70" />
+        <di:waypoint x="975" y="95" />
+        <di:waypoint x="975" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_11_di" bpmnElement="Flux_11">
         <di:waypoint x="1175" y="70" />
@@ -307,66 +318,70 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_12_di" bpmnElement="Flux_12">
         <di:waypoint x="1325" y="70" />
-        <di:waypoint x="1400" y="70" />
+        <di:waypoint x="1375" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_13_di" bpmnElement="Flux_13">
-        <di:waypoint x="1450" y="70" />
+        <di:waypoint x="1475" y="70" />
         <di:waypoint x="1550" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_14_di" bpmnElement="Flux_14">
-        <di:waypoint x="1425" y="95" />
-        <di:waypoint x="1425" y="140" />
-        <di:waypoint x="2625" y="140" />
-        <di:waypoint x="2625" y="95" />
+        <di:waypoint x="1600" y="70" />
+        <di:waypoint x="1700" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_15_di" bpmnElement="Flux_15">
-        <di:waypoint x="1600" y="70" />
-        <di:waypoint x="1675" y="70" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flux_16_di" bpmnElement="Flux_16">
         <di:waypoint x="1575" y="95" />
         <di:waypoint x="1575" y="140" />
-        <di:waypoint x="2025" y="140" />
-        <di:waypoint x="2025" y="95" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_16_di" bpmnElement="Flux_16">
+        <di:waypoint x="1750" y="70" />
+        <di:waypoint x="1825" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_17_di" bpmnElement="Flux_17">
-        <di:waypoint x="1775" y="70" />
-        <di:waypoint x="1850" y="70" />
+        <di:waypoint x="1725" y="95" />
+        <di:waypoint x="1725" y="140" />
+        <di:waypoint x="2175" y="140" />
+        <di:waypoint x="2175" y="95" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_18_di" bpmnElement="Flux_18">
-        <di:waypoint x="1900" y="70" />
+        <di:waypoint x="1925" y="70" />
         <di:waypoint x="2000" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_19_di" bpmnElement="Flux_19">
-        <di:waypoint x="1875" y="95" />
-        <di:waypoint x="1875" y="140" />
-        <di:waypoint x="2625" y="140" />
-        <di:waypoint x="2625" y="95" />
+        <di:waypoint x="2050" y="70" />
+        <di:waypoint x="2150" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_20_di" bpmnElement="Flux_20">
-        <di:waypoint x="2050" y="70" />
-        <di:waypoint x="2125" y="70" />
+        <di:waypoint x="2025" y="95" />
+        <di:waypoint x="2025" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_21_di" bpmnElement="Flux_21">
-        <di:waypoint x="2225" y="70" />
+        <di:waypoint x="2200" y="70" />
         <di:waypoint x="2275" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_22_di" bpmnElement="Flux_22">
         <di:waypoint x="2375" y="70" />
-        <di:waypoint x="2457" y="70" />
+        <di:waypoint x="2425" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_23_di" bpmnElement="Flux_23">
-        <di:waypoint x="2650" y="70" />
-        <di:waypoint x="2725" y="70" />
+        <di:waypoint x="2525" y="70" />
+        <di:waypoint x="2607" y="70" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flux_24_di" bpmnElement="Flux_24">
-        <di:waypoint x="2825" y="70" />
-        <di:waypoint x="2907" y="70" />
+        <di:waypoint x="2800" y="70" />
+        <di:waypoint x="2875" y="70" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flux_6_di" bpmnElement="Flux_6">
-        <di:waypoint x="575" y="210" />
-        <di:waypoint x="675" y="210" />
-        <di:waypoint x="675" y="95" />
+      <bpmndi:BPMNEdge id="Flux_25_di" bpmnElement="Flux_25">
+        <di:waypoint x="2975" y="70" />
+        <di:waypoint x="3057" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_7_di" bpmnElement="Flux_7">
+        <di:waypoint x="725" y="210" />
+        <di:waypoint x="825" y="210" />
+        <di:waypoint x="825" y="95" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
