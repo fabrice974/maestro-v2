@@ -1,0 +1,9 @@
+{
+  "name": "@maestro/outils",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@camunda8/orchestration-cluster-api": "10.0.1",
+    "@maestro/commun": "*"
+  }
+}

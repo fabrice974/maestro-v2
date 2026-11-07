@@ -1,0 +1,33 @@
+{
+  "name": "maestro-v2",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "passerelle",
+    "outils"
+  ],
+  "scripts": {
+    "deployer": "tsx outils/src/deployer.ts",
+    "passerelle": "tsx passerelle/src/main.ts",
+    "demarrer": "tsx outils/src/demarrer.ts",
+    "bot": "tsx outils/src/bot-demo.ts",
+    "impact": "tsx outils/src/impact.ts",
+    "scenario": "tsx outils/src/scenario.ts",
+    "audit:verifier": "tsx outils/src/audit-verifier.ts",
+    "audit:exporter": "tsx outils/src/audit-exporter.ts",
+    "generer:client": "npm run generer -w @maestro/client-backbone",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
