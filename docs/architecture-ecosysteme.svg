@@ -1,0 +1,270 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 1084" role="img" aria-labelledby="titre desc">
+  <title id="titre">Écosystème Maestro — vue technique</title>
+  <desc id="desc">Trois couches : Camunda 8 SaaS (backbone, sous-processus, patron tache-metier, règles DMN), la passerelle TypeScript (seul client Camunda, registre, audit, gouvernance, documents SharePoint) et les cinq applications des dépôts voisins, reliées à la passerelle par le contrat OpenAPI et des webhooks.</desc>
+  <style>
+    :root, svg {
+      --bg: #F6F8F9; --paper: #FFFFFF; --ink: #16212B; --muted: #5A6774; --line: #CDD5DC; --flow: #3B4A57;
+      --rule: #9C6210; --rule-bg: #FFF5E3; --maestro: #1D5C8C; --band: #E9EEF1;
+      --df: #2A7677; --rd: #6B50A6; --db: #AD5B24; --sp: #3B7C44; --ds: #983D64;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root, svg {
+        --bg: #0D1117; --paper: #161E27; --ink: #E5EBF0; --muted: #96A4B1; --line: #2E3B48; --flow: #AEBBC7;
+        --rule: #E2A54B; --rule-bg: #2A2114; --maestro: #6FB0E2; --band: #121A22;
+        --df: #5CC3C1; --rd: #AB95E8; --db: #E69C64; --sp: #80C78B; --ds: #E286B0;
+      }
+    }
+    text { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; fill: var(--ink); }
+    .mono { font-family: "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    .bg { fill: var(--bg); }
+    .band { fill: var(--band); stroke: var(--line); stroke-width: 1; }
+    .band-m { fill: var(--band); stroke: var(--maestro); stroke-width: 1.4; }
+    .eb { font-size: 10.5px; letter-spacing: .14em; font-weight: 700; fill: var(--muted); }
+    .h { font-size: 15px; font-weight: 700; }
+    .t1 { font-size: 22px; font-weight: 700; }
+    .sub { font-size: 12.5px; fill: var(--muted); }
+    .box { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; }
+    .box-m { fill: var(--paper); stroke: var(--maestro); stroke-width: 2.2; }
+    .box-l { fill: var(--paper); stroke: var(--lane); stroke-width: 1.5; }
+    .bar-l { fill: var(--lane); }
+    .n { font-size: 13px; font-weight: 700; }
+    .app { font-size: 12px; }
+    .d { font-size: 11.5px; fill: var(--muted); }
+    .d2 { font-size: 10.5px; fill: var(--muted); }
+    .ctr { text-anchor: middle; }
+    .end { text-anchor: end; }
+    .panel { fill: var(--paper); stroke: var(--line); stroke-width: 1.1; stroke-dasharray: 4 3; }
+    .panel-r { fill: var(--rule-bg); stroke: var(--rule); stroke-width: 1.1; }
+    .chip { fill: var(--paper); stroke: var(--rule); stroke-width: 1; }
+    .job { fill: var(--paper); stroke: var(--maestro); stroke-width: 1.2; }
+    .gw { fill: var(--paper); stroke: var(--flow); stroke-width: 1.3; }
+    .f { stroke: var(--flow); stroke-width: 1.4; fill: none; }
+    .fm { stroke: var(--maestro); stroke-width: 1.6; fill: none; }
+    .fd { stroke: var(--muted); stroke-width: 1.3; fill: none; stroke-dasharray: 4 3; }
+    .halo { stroke: var(--band); stroke-width: 7; fill: none; }
+    .ah { fill: var(--flow); } .ahm { fill: var(--maestro); } .ahd { fill: var(--muted); }
+    .lbl { font-size: 11px; fill: var(--muted); }
+    .lblm { font-size: 11px; fill: var(--maestro); font-weight: 600; }
+    .rl { fill: var(--rule); font-weight: 600; }
+    .k-flow { fill: var(--flow); font-weight: 700; } .k-m { fill: var(--maestro); font-weight: 700; } .k-d { fill: var(--muted); font-weight: 700; }
+    .tool { fill: var(--paper); stroke: var(--line); stroke-width: 1; }
+    .sdk { fill: var(--paper); stroke: var(--maestro); stroke-width: 1.1; stroke-dasharray: 5 3; }
+    .l-df { --lane: var(--df); } .l-rd { --lane: var(--rd); } .l-db { --lane: var(--db); } .l-sp { --lane: var(--sp); } .l-ds { --lane: var(--ds); }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahm" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1320" height="1084"/>
+  <text class="t1" x="40" y="38">Écosystème Maestro</text>
+  <text class="sub" x="40" y="60">Vue technique : qui parle à qui entre Camunda, la passerelle et les applications. Couleurs = une application et son sous-processus.</text>
+
+  <!-- ═══════════ Couche 1 · Camunda 8 SaaS ═══════════ -->
+  <rect class="band" x="24" y="76" width="1272" height="280" rx="12"/>
+  <text class="eb" x="40" y="100">CAMUNDA 8 SAAS · CLUSTER dev-cl</text>
+  <text class="h" x="40" y="122">Moteur Zeebe · Operate</text>
+
+  <rect class="box-m" x="40" y="196" width="170" height="74" rx="8"/>
+  <text class="n mono" x="54" y="220">backbone.bpmn</text>
+  <text class="d" x="54" y="238">de bout en bout</text>
+  <text class="d2 mono" x="54" y="256">businessId = dossierId</text>
+  <text class="lbl" x="40" y="296">call activities →</text>
+
+  <line class="f" x1="210" y1="233" x2="228" y2="233"/>
+  <line class="f" x1="228" y1="151" x2="228" y2="319"/>
+  <line class="f" x1="228" y1="151" x2="248" y2="151" marker-end="url(#a)"/>
+  <line class="f" x1="228" y1="235" x2="248" y2="235" marker-end="url(#a)"/>
+  <line class="f" x1="228" y1="277" x2="248" y2="277" marker-end="url(#a)"/>
+  <line class="f" x1="228" y1="319" x2="248" y2="319" marker-end="url(#a)"/>
+  <polyline class="f" points="265,166 265,193 278,193" marker-end="url(#a)"/>
+
+  <g class="l-df"><rect class="box-l" x="250" y="136" width="250" height="30" rx="6"/><rect class="bar-l" x="250" y="136" width="5" height="30" rx="2"/>
+    <text class="n mono" x="264" y="156">deal-flow.bpmn</text><text class="d2 end" x="490" y="156">À venir → Assigné</text></g>
+  <g class="l-rd"><rect class="box-l" x="280" y="178" width="220" height="30" rx="6"/><rect class="bar-l" x="280" y="178" width="5" height="30" rx="2"/>
+    <text class="n mono" x="294" y="198">revue-diligente.bpmn</text></g>
+  <g class="l-db"><rect class="box-l" x="250" y="220" width="250" height="30" rx="6"/><rect class="bar-l" x="250" y="220" width="5" height="30" rx="2"/>
+    <text class="n mono" x="264" y="240">debourse.bpmn</text><text class="d2 end" x="490" y="240">1er + chaque tirage</text></g>
+  <g class="l-sp"><rect class="box-l" x="250" y="262" width="250" height="30" rx="6"/><rect class="bar-l" x="250" y="262" width="5" height="30" rx="2"/>
+    <text class="n mono" x="264" y="282">suivi-periodique.bpmn</text><text class="d2 end" x="490" y="282">mensuel</text></g>
+  <g class="l-ds"><rect class="box-l" x="250" y="304" width="250" height="30" rx="6"/><rect class="bar-l" x="250" y="304" width="5" height="30" rx="2"/>
+    <text class="n mono" x="264" y="324">desinvestissement.bpmn</text><text class="d2 end" x="490" y="324">sortie</text></g>
+
+  <!-- patron tache-metier -->
+  <rect class="panel" x="530" y="136" width="370" height="208" rx="8"/>
+  <text class="n mono" x="546" y="158">tache-metier.bpmn</text>
+  <text class="d" x="546" y="174">appelé par chaque étape humaine (22)</text>
+
+  <rect class="job" x="546" y="216" width="80" height="32" rx="6"/><text class="d2 mono ctr" x="586" y="236" style="fill:var(--ink)">ouvrir</text>
+  <line class="f" x1="626" y1="232" x2="642" y2="232" marker-end="url(#a)"/>
+  <polygon class="gw" points="644,232 660,216 676,232 660,248"/><circle cx="660" cy="232" r="6" fill="none" stroke="var(--flow)" stroke-width="1"/>
+  <polyline class="f" points="660,216 660,194 778,194" marker-end="url(#a)"/>
+  <text class="lbl mono" x="668" y="189">tache.completee</text>
+  <line class="f" x1="676" y1="232" x2="778" y2="232" marker-end="url(#a)"/>
+  <text class="lbl mono" x="684" y="226">tache.refusee</text>
+  <polyline class="f" points="660,248 660,286 778,286" marker-end="url(#a)"/>
+  <text class="lbl" x="668" y="280">échéance SLA</text>
+  <rect class="job" x="780" y="180" width="110" height="28" rx="6"/><text class="d2 mono ctr" x="835" y="198" style="fill:var(--ink)">clore</text>
+  <rect class="job" x="780" y="216" width="110" height="32" rx="6"/><text class="d2 mono ctr" x="835" y="236" style="fill:var(--ink)">consigner-refus</text>
+  <rect class="job" x="780" y="270" width="110" height="32" rx="6"/><text class="d2 mono ctr" x="835" y="290" style="fill:var(--ink)">escalader</text>
+  <polyline class="fd" points="890,232 894,232 894,318 640,318 640,236"/>
+  <line class="fd" x1="890" y1="286" x2="894" y2="286"/>
+  <text class="d2" x="767" y="313">retour à l’attente</text>
+  <text class="d2" x="546" y="336">entrée <tspan class="mono">typeTache</tspan> · sortie <tspan class="mono">=resultat</tspan> · jobs <tspan class="mono">tache.*</tspan></text>
+
+  <!-- DMN -->
+  <rect class="panel-r" x="920" y="136" width="360" height="208" rx="8"/>
+  <text class="n" x="936" y="158">Règles DMN</text>
+  <text class="d" x="936" y="176">liaison <tspan class="mono">latest</tspan> · chaque décision auditée</text>
+  <rect class="chip" x="936" y="188" width="328" height="24" rx="5"/><text class="d mono" x="948" y="205" style="fill:var(--ink)">admissibilite-mandat</text><text class="d2 end rl" x="1254" y="205">deal flow</text>
+  <rect class="chip" x="936" y="218" width="328" height="24" rx="5"/><text class="d mono" x="948" y="235" style="fill:var(--ink)">chantiers-revue-diligente</text><text class="d2 end rl" x="1254" y="235">revue</text>
+  <rect class="chip" x="936" y="248" width="328" height="24" rx="5"/><text class="d mono" x="948" y="265" style="fill:var(--ink)">niveau-approbation</text><text class="d2 end rl" x="1254" y="265">deal flow, sortie</text>
+  <rect class="chip" x="936" y="278" width="328" height="24" rx="5"/><text class="d mono" x="948" y="295" style="fill:var(--ink)">controles-debourse</text><text class="d2 end rl" x="1254" y="295">déboursé</text>
+  <rect class="chip" x="936" y="308" width="328" height="24" rx="5"/><text class="d mono" x="948" y="325" style="fill:var(--ink)">alerte-covenants</text><text class="d2 end rl" x="1254" y="325">suivi</text>
+
+  <!-- ═══════════ Échanges Camunda ⇄ passerelle ═══════════ -->
+  <line class="f" x1="80" y1="358" x2="80" y2="494" marker-end="url(#a)"/>
+  <line class="fm" x1="130" y1="494" x2="130" y2="360" marker-end="url(#am)"/>
+  <line class="fd" x1="180" y1="494" x2="180" y2="360" marker-end="url(#ad)"/>
+  <text class="lbl" x="260" y="381"><tspan class="k-flow">▼ jobs activés (pull)</tspan> : <tspan class="mono">tache.ouvrir · tache.escalader · tache.consigner-refus · tache.clore · dossier.phase · debourse.executer-paiement</tspan> · écouteur <tspan class="mono">regle.consigner</tspan></text>
+  <text class="lbl" x="260" y="401"><tspan class="k-m">▲ messages publiés</tspan> (TTL, messageId) : <tspan class="mono">tache.completee · tache.refusee</tspan> (clé tacheId) · <tspan class="mono">demande-tirage · remboursement-complet · decision-desinvestir</tspan> (clé dossierId)</text>
+  <text class="lbl" x="260" y="421"><tspan class="k-d">▲ déploiement</tspan> des BPMN/DMN : <tspan class="mono">npm run deployer</tspan> · sentinelle au démarrage puis toutes les 10 min</text>
+
+  <!-- ═══════════ Couche 2 · Passerelle ═══════════ -->
+  <rect class="band-m" x="24" y="436" width="1272" height="254" rx="12"/>
+  <text class="eb" x="270" y="460">DÉPÔT maestro-v2 · PASSERELLE · TYPESCRIPT · PORT 4000</text>
+  <text class="h" x="270" y="481">Seule porte vers Camunda et vers SharePoint</text>
+
+  <rect class="box-m" x="40" y="496" width="200" height="60" rx="8"/>
+  <text class="n mono" x="54" y="517">moteur.ts</text>
+  <text class="d" x="54" y="534">seul import du SDK Camunda</text>
+  <text class="d2" x="54" y="549">jobs · messages · déploiement</text>
+
+  <rect class="box" x="280" y="496" width="170" height="60" rx="8"/>
+  <text class="n mono" x="294" y="517">workers.ts</text>
+  <text class="d" x="294" y="534">un worker par type</text>
+  <text class="d2" x="294" y="549">de job</text>
+
+  <rect class="box" x="490" y="496" width="230" height="60" rx="8"/>
+  <text class="n mono" x="504" y="517">services.ts</text>
+  <text class="d" x="504" y="534">logique partagée</text>
+  <text class="d2" x="504" y="549">validation avant corrélation</text>
+
+  <rect class="box" x="880" y="496" width="220" height="60" rx="8"/>
+  <text class="n mono" x="894" y="517">app.ts</text>
+  <text class="d" x="894" y="534">API REST du contrat</text>
+  <text class="d2" x="894" y="549">jeton par application</text>
+
+  <rect class="box" x="1140" y="496" width="140" height="60" rx="8"/>
+  <text class="n" x="1154" y="517">Cockpit</text>
+  <text class="d mono" x="1154" y="534">/cockpit/</text>
+  <text class="d2" x="1154" y="549">dossiers, tâches, audit</text>
+
+  <line class="f" x1="242" y1="526" x2="278" y2="526" marker-start="url(#a)" marker-end="url(#a)"/>
+  <line class="f" x1="450" y1="526" x2="488" y2="526" marker-end="url(#a)"/>
+  <line class="f" x1="880" y1="526" x2="722" y2="526" marker-end="url(#a)"/>
+  <text class="lbl ctr" x="800" y="519">appelle</text>
+  <line class="f" x1="1100" y1="526" x2="1138" y2="526" marker-end="url(#a)"/>
+  <polyline class="fm" points="520,556 520,570 200,570 200,558" marker-end="url(#am)"/>
+  <text class="lblm" x="300" y="566">publie les messages</text>
+
+  <!-- services → stockage -->
+  <line class="f" x1="605" y1="556" x2="605" y2="584"/>
+  <line class="f" x1="355" y1="584" x2="1170" y2="584"/>
+  <line class="f" x1="355" y1="584" x2="355" y2="598" marker-end="url(#a)"/>
+  <line class="f" x1="595" y1="584" x2="595" y2="598" marker-end="url(#a)"/>
+  <line class="f" x1="845" y1="584" x2="845" y2="598" marker-end="url(#a)"/>
+  <line class="f" x1="1170" y1="584" x2="1170" y2="598" marker-end="url(#a)"/>
+
+  <rect class="box" x="40" y="600" width="180" height="64" rx="8"/>
+  <text class="n mono" x="54" y="621">sentinelle.ts</text>
+  <text class="d" x="54" y="638">redéploie les modèles</text>
+  <text class="d2" x="54" y="653">manquants · toutes les 10 min</text>
+  <line class="fd" x1="130" y1="600" x2="130" y2="560" marker-end="url(#ad)"/>
+
+  <rect class="box" x="250" y="600" width="210" height="64" rx="8"/>
+  <text class="n mono" x="264" y="621">config/*.yaml</text>
+  <text class="d" x="264" y="638">taches · organisation · securite</text>
+  <text class="d2" x="264" y="653">zod · rechargés à chaud</text>
+
+  <rect class="box" x="490" y="600" width="210" height="64" rx="8"/>
+  <text class="n" x="504" y="621">Registre SQLite</text>
+  <text class="d" x="504" y="638">dossiers · tâches · documents</text>
+  <text class="d2" x="504" y="653">événements reçus</text>
+
+  <rect class="box" x="730" y="600" width="230" height="64" rx="8"/>
+  <text class="n" x="744" y="621">Audit chaîné</text>
+  <text class="d" x="744" y="638">ajout seul · SHA-256</text>
+  <text class="d2" x="744" y="653">export JSONL mensuel signé</text>
+
+  <rect class="box" x="1060" y="600" width="220" height="64" rx="8"/>
+  <text class="n mono" x="1074" y="621">documents/</text>
+  <text class="d" x="1074" y="638">Graph (SharePoint) ou local</text>
+  <text class="d2 mono" x="1074" y="653">{type, nom, url, sha256}</text>
+
+  <!-- SharePoint -->
+  <line class="f" x1="1170" y1="664" x2="1170" y2="704" marker-end="url(#a)"/>
+  <rect class="box" x="1080" y="706" width="200" height="50" rx="8"/>
+  <text class="n" x="1094" y="727">SharePoint · M365</text>
+  <text class="d2 mono" x="1094" y="745">POC-Maestro-Camunda/</text>
+
+  <!-- ═══════════ Échanges passerelle ⇄ applications ═══════════ -->
+  <line class="halo" x1="995" y1="578" x2="995" y2="590"/>
+  <line class="halo" x1="1025" y1="578" x2="1025" y2="590"/>
+  <line class="fm" x1="995" y1="812" x2="995" y2="558" marker-end="url(#am)"/>
+  <line class="f" x1="1025" y1="556" x2="1025" y2="810" marker-end="url(#a)"/>
+  <text class="lbl end" x="985" y="722"><tspan class="k-m">▲ REST</tspan> · <tspan class="mono">contrats/openapi.yaml</tspan> · jeton par application</text>
+  <text class="lbl end" x="985" y="741"><tspan class="k-flow">▼ webhook</tspan> <tspan class="mono">POST /webhooks/taches</tspan> : tâche ouverte</text>
+  <text class="d2 end" x="985" y="759">compléter une tâche · déposer une pièce · signaler un fait métier · lire un dossier</text>
+
+  <!-- ═══════════ Couche 3 · Applications ═══════════ -->
+  <rect class="band" x="24" y="770" width="1272" height="180" rx="12"/>
+  <text class="eb" x="40" y="794">DÉPÔTS VOISINS · ecosysteme.yaml · un dépôt, une équipe, un pipeline</text>
+  <line class="f" x1="154" y1="812" x2="1166" y2="812"/>
+  <line class="f" x1="154" y1="812" x2="154" y2="828"/>
+  <line class="f" x1="407" y1="812" x2="407" y2="828"/>
+  <line class="f" x1="660" y1="812" x2="660" y2="828"/>
+  <line class="f" x1="913" y1="812" x2="913" y2="828"/>
+  <line class="f" x1="1166" y1="812" x2="1166" y2="828"/>
+
+  <g class="l-df"><rect class="box-l" x="40" y="828" width="228" height="72" rx="8"/><rect class="bar-l" x="40" y="828" width="228" height="5" rx="2"/>
+    <text class="n mono app" x="54" y="853">maestro-app-deal-flow</text><text class="d" x="54" y="871">TypeScript · :4101</text><text class="d2" x="54" y="888"><tspan class="mono">dealflow.*</tspan> · crée les dossiers</text></g>
+  <g class="l-rd"><rect class="box-l" x="293" y="828" width="228" height="72" rx="8"/><rect class="bar-l" x="293" y="828" width="228" height="5" rx="2"/>
+    <text class="n mono app" x="307" y="853">maestro-app-revue-diligente</text><text class="d" x="307" y="871">TypeScript · :4102</text><text class="d2" x="307" y="888"><tspan class="mono">revue.*</tspan> · experts externes</text></g>
+  <g class="l-db"><rect class="box-l" x="546" y="828" width="228" height="72" rx="8"/><rect class="bar-l" x="546" y="828" width="228" height="5" rx="2"/>
+    <text class="n mono app" x="560" y="853">maestro-app-debourse</text><text class="d" x="560" y="871">.NET 10 · :4103</text><text class="d2" x="560" y="888"><tspan class="mono">debourse.*</tspan> · fait <tspan class="mono">demande-tirage</tspan></text></g>
+  <g class="l-sp"><rect class="box-l" x="799" y="828" width="228" height="72" rx="8"/><rect class="bar-l" x="799" y="828" width="228" height="5" rx="2"/>
+    <text class="n mono app" x="813" y="853">maestro-app-suivi-periodique</text><text class="d" x="813" y="871">TypeScript · :4104</text><text class="d2" x="813" y="888"><tspan class="mono">suivi.*</tspan> · remboursement, sortie</text></g>
+  <g class="l-ds"><rect class="box-l" x="1052" y="828" width="228" height="72" rx="8"/><rect class="bar-l" x="1052" y="828" width="228" height="5" rx="2"/>
+    <text class="n mono app" x="1066" y="853">maestro-app-desinvestissement</text><text class="d" x="1066" y="871">TypeScript · :4105</text><text class="d2" x="1066" y="888"><tspan class="mono">desinvest.*</tspan></text></g>
+
+  <line class="fd" x1="154" y1="900" x2="154" y2="912"/>
+  <line class="fd" x1="407" y1="900" x2="407" y2="912"/>
+  <line class="fd" x1="913" y1="900" x2="913" y2="912"/>
+  <line class="fd" x1="1166" y1="900" x2="1166" y2="912"/>
+  <rect class="sdk" x="40" y="912" width="481" height="26" rx="6"/>
+  <text class="d2 ctr" x="280" y="929"><tspan class="mono" style="fill:var(--ink)">maestro-sdk-ts</tspan> · kit @maestro/sdk, épinglé par étiquette git</text>
+  <rect class="sdk" x="799" y="912" width="481" height="26" rx="6"/>
+  <text class="d2 ctr" x="1040" y="929"><tspan class="mono" style="fill:var(--ink)">maestro-sdk-ts</tspan> · boîte de tâches, formulaire, dépôt, webhook</text>
+  <text class="d2 ctr" x="660" y="923">sans SDK : client C# NSwag</text>
+  <text class="d2 ctr" x="660" y="936">généré d’une copie figée du contrat</text>
+
+  <!-- ═══════════ Outillage ═══════════ -->
+  <rect class="band" x="24" y="962" width="1272" height="66" rx="12"/>
+  <text class="eb" x="40" y="984">OUTILLAGE · npm run …</text>
+  <rect class="tool" x="40" y="994" width="78" height="24" rx="5"/><text class="d mono ctr" x="79" y="1010" style="fill:var(--ink)">deployer</text>
+  <rect class="tool" x="126" y="994" width="135" height="24" rx="5"/><text class="d mono ctr" x="193" y="1010" style="fill:var(--ink)">verifier:cluster</text>
+  <rect class="tool" x="269" y="994" width="92" height="24" rx="5"/><text class="d mono ctr" x="315" y="1010" style="fill:var(--ink)">ecosysteme</text>
+  <rect class="tool" x="369" y="994" width="63" height="24" rx="5"/><text class="d mono ctr" x="400" y="1010" style="fill:var(--ink)">impact</text>
+  <rect class="tool" x="440" y="994" width="85" height="24" rx="5"/><text class="d mono ctr" x="482" y="1010" style="fill:var(--ink)">incidents</text>
+  <rect class="tool" x="533" y="994" width="78" height="24" rx="5"/><text class="d mono ctr" x="572" y="1010" style="fill:var(--ink)">scenario</text>
+  <rect class="tool" x="619" y="994" width="42" height="24" rx="5"/><text class="d mono ctr" x="640" y="1010" style="fill:var(--ink)">bot</text>
+  <rect class="tool" x="669" y="994" width="121" height="24" rx="5"/><text class="d mono ctr" x="729" y="1010" style="fill:var(--ink)">audit:verifier</text>
+  <rect class="tool" x="798" y="994" width="121" height="24" rx="5"/><text class="d mono ctr" x="858" y="1010" style="fill:var(--ink)">audit:exporter</text>
+  <rect class="tool" x="927" y="994" width="128" height="24" rx="5"/><text class="d mono ctr" x="991" y="1010" style="fill:var(--ink)">generer:modeles</text>
+  <rect class="tool" x="1063" y="994" width="70" height="24" rx="5"/><text class="d mono ctr" x="1098" y="1010" style="fill:var(--ink)">test:ui</text>
+
+  <text class="d2" x="40" y="1054">Invariants : seul <tspan class="mono">moteur.ts</tspan> importe <tspan class="mono">@camunda8/orchestration-cluster-api</tspan> · aucune application ne connaît une clé d’instance · aucun nom de personne dans un BPMN/DMN ·</text>
+  <text class="d2" x="40" y="1070">aucun contenu de document dans une variable de processus · toute écriture SharePoint reste sous <tspan class="mono">POC-Maestro-Camunda/</tspan>.</text>
+</svg>
