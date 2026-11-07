@@ -5,10 +5,11 @@
  *
  *   npm run impact -- conformite
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { RACINE } from '@maestro/commun';
 import { applicationDe, chargerGouvernance } from '../../passerelle/src/gouvernance/charger.ts';
+import { cheminDepot, depots } from './ecosysteme-config.ts';
 
 const terme = process.argv[2];
 if (!terme) {
@@ -80,8 +81,9 @@ function chargerBrutRoles(): Record<string, string[]> {
   return roles;
 }
 
-// ───── Recherche textuelle (tous les artefacts) ─────
-const DOSSIERS = ['modeles', 'config', 'apps', 'contrats', 'passerelle/src', 'packages/commun/src'];
+// ───── Recherche textuelle (tous les artefacts, y compris les dépôts voisins de l'écosystème) ─────
+const DEPOTS_VOISINS = depots().filter((d) => existsSync(cheminDepot(d.nom)));
+const DOSSIERS = ['modeles', 'config', 'contrats', 'passerelle/src', 'packages/commun/src', ...DEPOTS_VOISINS.map((d) => cheminDepot(d.nom))];
 const EXCLUS = /node_modules|bin|obj|\.sqlite|schema\.d\.ts|Generated/;
 function fichiers(dir: string): string[] {
   try {
@@ -97,7 +99,6 @@ function fichiers(dir: string): string[] {
 const categories: Record<string, string> = {
   modeles: 'Modèles BPMN / DMN (redéploiement requis)',
   config: 'Configuration de gouvernance (redémarrage de la passerelle)',
-  apps: 'Applications (nouvelle version de l’application)',
   contrats: 'Contrat d’API (régénérer les clients TS et C#)',
   passerelle: 'Passerelle',
   packages: 'Paquets partagés',
@@ -106,15 +107,17 @@ const motif = new RegExp(terme.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 let total = 0;
 for (const d of DOSSIERS) {
   const occ: string[] = [];
-  for (const f of fichiers(join(RACINE, d))) {
+  const voisin = DEPOTS_VOISINS.find((x) => cheminDepot(x.nom) === d);
+  const base = voisin ? d : RACINE;
+  for (const f of fichiers(voisin ? d : join(RACINE, d))) {
     readFileSync(f, 'utf8')
       .split(/\r?\n/)
       .forEach((l, i) => {
-        if (motif.test(l) && !l.includes('bpmndi:')) occ.push(`    ${relative(RACINE, f)}:${i + 1}  ${l.trim().slice(0, 110)}`);
+        if (motif.test(l) && !l.includes('bpmndi:')) occ.push(`    ${relative(base, f)}:${i + 1}  ${l.trim().slice(0, 110)}`);
       });
   }
   if (occ.length) {
-    titre(categories[d.split('/')[0]!] ?? d);
+    titre(voisin ? `Dépôt ${voisin.nom} (nouvelle version de l’application, PR dans ce dépôt)` : (categories[d.split('/')[0]!] ?? d));
     occ.slice(0, 40).forEach((o) => console.log(o));
     if (occ.length > 40) console.log(`    … ${occ.length - 40} autre(s)`);
     total += occ.length;

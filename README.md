@@ -7,13 +7,34 @@ Un **backbone Camunda 8** orchestre le processus d'investissement de bout en bou
 - **post-investissement** : suivi mensuel, tirages additionnels, désinvestissement.
 
 Les étapes sont réalisées par **cinq applications de sous-processus** (quatre en TypeScript, une en
-.NET). Aucune d'elles ne connaît Camunda : elles parlent toutes à une **passerelle**, au travers d'un
-contrat OpenAPI.
+.NET), chacune dans **son propre dépôt**. Aucune d'elles ne connaît Camunda : elles parlent toutes à
+une **passerelle**, au travers d'un contrat OpenAPI.
 
 ```
 Camunda 8 SaaS (BPMN + DMN) ◄──► Passerelle TS (seul client Camunda) ◄──► Applications TS / .NET
                                    · registre des tâches · sécurité · audit chaîné · SharePoint
 ```
+
+## Les dépôts de l'écosystème
+
+Ce dépôt est le **backbone** : passerelle, modèles BPMN/DMN, gouvernance, contrat, outils et
+orchestration. Les applications vivent dans des dépôts voisins (clonés à côté de `maestro-v2`),
+décrits dans [`ecosysteme.yaml`](ecosysteme.yaml) :
+
+| Dépôt | Rôle | Dépend de |
+|-------|------|-----------|
+| `maestro-v2` | backbone | Camunda, SharePoint |
+| `maestro-sdk-ts` | SDK TypeScript : client du contrat, kit d'application, simulation | copie figée du contrat |
+| `maestro-app-deal-flow` (:4101) | origination et deal flow | `maestro-sdk-ts#v1.0.0` |
+| `maestro-app-revue-diligente` (:4102) | portail des contributeurs de la revue diligente | `maestro-sdk-ts#v1.0.0` |
+| `maestro-app-debourse` (:4103) | déboursé, .NET 10 | copie figée du contrat + client NSwag |
+| `maestro-app-suivi-periodique` (:4104) | suivi mensuel et événements de sortie | `maestro-sdk-ts#v1.0.0` |
+| `maestro-app-desinvestissement` (:4105) | désinvestissement | `maestro-sdk-ts#v1.0.0` |
+
+Chaque équipe est maîtresse de son dépôt et de son rythme. Elle épingle une version du SDK ou du
+contrat, et le backbone peut évoluer sans la casser. Le seul couplage est le contrat de la passerelle
+(`contrats/openapi.yaml`), aussi publié par la passerelle en marche :
+`GET http://localhost:4000/contrat/openapi.yaml`.
 
 - Conception : [docs/superpowers/specs/2026-11-07-backbone-investissement-design.md](docs/superpowers/specs/2026-11-07-backbone-investissement-design.md)
 - Architecture : [docs/architecture.md](docs/architecture.md)
@@ -33,14 +54,19 @@ Camunda 8 SaaS (BPMN + DMN) ◄──► Passerelle TS (seul client Camunda) ◄
 npm install
 cp .env.example .env        # puis compléter (identifiants Camunda, groupe SharePoint)
 npm run deployer            # déploie tous les BPMN et DMN de modeles/
+npm run ecosysteme -- cloner      # clone les dépôts voisins absents depuis GitHub
+npm run ecosysteme -- installer   # npm install / dotnet build dans chaque dépôt d'application
 ```
 
 ## Lancer la démo
 
 ```bash
-# Terminal 1 : passerelle + 4 applications TS + application .NET
-npm run demarrer -- --dotnet
+npm run ecosysteme -- demarrer    # passerelle + les 5 applications, chacune depuis son dépôt
+npm run ecosysteme -- statut      # état de chaque dépôt (branche, modifications, version du SDK, service)
 ```
+
+Options : `--sans-passerelle`, `--sauf deal-flow,debourse`. Une application peut aussi se lancer
+seule depuis son dépôt (`npm start` ou `dotnet run`).
 
 Pour accélérer, mettre dans `.env` : `DEMO_DELAI_SUIVI=PT1M` (un « mois » de suivi dure une minute)
 et `DEMO_FACTEUR_SLA=0.01` (délais SLA divisés par 100).
@@ -101,14 +127,28 @@ conformité, désinvestissement.
 | `npm run incidents` | incidents Camunda actifs |
 | `npm run annuler -- INV-…` | annuler l'instance d'un dossier |
 | `npm run audit:verifier` / `audit:exporter` | intégrité de la chaîne / export mensuel vers SharePoint |
-| `npm run generer:client` | régénérer le client TS depuis `contrats/openapi.yaml` |
+| `npm run ecosysteme -- statut\|cloner\|installer\|demarrer\|contrat` | orchestration des dépôts voisins |
+| `npm run verifier:cluster` | ce qui est réellement déployé sur le cluster |
+
+## Faire évoluer le contrat
+
+1. Modifier `contrats/openapi.yaml` (et la passerelle) dans ce dépôt ; PR ici.
+2. `npm run ecosysteme -- contrat` : copie le contrat dans `maestro-sdk-ts` et `maestro-app-debourse`,
+   régénère leurs clients et liste les changements.
+3. PR dans `maestro-sdk-ts`, puis nouvelle étiquette (`v1.1.0` si compatible, `v2.0.0` sinon) ;
+   PR dans `maestro-app-debourse`.
+4. Chaque application TS monte la version du SDK dans son `package.json` quand elle le décide.
+
+Tant qu'un changement est compatible (ajout de champ ou d'opération), les applications existantes
+continuent de fonctionner sans rien changer.
 
 ## Ajouter une application (en minutes)
 
-1. Déclarer l'application et ses types de tâches dans `config/securite.yaml`.
-2. TypeScript : copier `apps/desinvestissement` (15 lignes) et changer l'identifiant, le port et le
-   jeton. Autre langage : générer un client depuis `contrats/openapi.yaml` (voir
-   `apps/debourse-dotnet/README.md`).
+1. Déclarer l'application et ses types de tâches dans `config/securite.yaml`, et le dépôt dans
+   `ecosysteme.yaml`.
+2. TypeScript : créer un dépôt sur le modèle de `maestro-app-desinvestissement` (15 lignes et une
+   dépendance `@maestro/sdk`). Autre langage : générer un client depuis le contrat (voir
+   `maestro-app-debourse`).
 3. Aucun changement dans Camunda.
 
 ## Après une mise en pause du cluster d'essai

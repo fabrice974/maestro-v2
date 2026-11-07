@@ -22,8 +22,10 @@ Statut : **implémentée dans la PoC** (2026-11-07). La conception et ses justif
 │ documents : SharePoint (Graph) confiné à POC-Maestro-Camunda/ · cockpit (/cockpit/)     │
 └───────────────▲ REST (contrats/openapi.yaml) ───┬ webhooks « tâche ouverte » ───────────┘
                 │                                 ▼
-  apps/deal-flow · apps/revue-diligente · apps/suivi-periodique · apps/desinvestissement (TS, kit-app)
-  apps/debourse-dotnet (.NET 10, client C# généré par NSwag)
+  dépôts voisins (ecosysteme.yaml) :
+  maestro-app-deal-flow · -revue-diligente · -suivi-periodique · -desinvestissement (TS, @maestro/sdk)
+  maestro-app-debourse (.NET 10, client C# généré par NSwag depuis sa copie du contrat)
+  maestro-sdk-ts : client TS du contrat + kit d'application, versionné par étiquette git
 ```
 
 ## Décisions structurantes
@@ -74,6 +76,18 @@ Statut : **implémentée dans la PoC** (2026-11-07). La conception et ses justif
 Limite connue : un tirage en cours peut se terminer après la clôture du dossier, car le
 remboursement complet ne l'interrompt pas. En cible, il faudra attendre la fin des tirages avant de
 clôturer.
+
+## Découpage en dépôts
+
+Un dépôt par application, plus un SDK TypeScript, autour du dépôt backbone. Pourquoi :
+- **Autonomie** : chaque équipe a son dépôt, son pipeline et son rythme de livraison.
+- **Contrat seul couplage** : les applications TS épinglent une étiquette du SDK (`#v1.0.0`) ;
+  l'application .NET garde une copie figée du contrat. Le backbone peut évoluer sans les casser.
+- **Contrat publié** : `contrats/openapi.yaml` fait foi ; la passerelle le sert sur
+  `GET /contrat/openapi.yaml` ; `npm run ecosysteme -- contrat` le propage au SDK et à l'application
+  .NET, avec régénération des clients, pour une PR dans chaque dépôt.
+- **Orchestration locale** : `npm run ecosysteme` clone, installe, démarre et inspecte les dépôts
+  voisins. `npm run impact` cherche aussi dans les dépôts voisins.
 
 ## Les deux sens de communication
 

@@ -1,0 +1,46 @@
+# Écosystème Maestro : le backbone (ce dépôt) et les dépôts voisins qu'il orchestre.
+# Chaque dépôt est cloné à côté de maestro-v2 (dossier = ../<nom>).
+# Utilisé par : npm run ecosysteme -- <statut|cloner|installer|demarrer|contrat>
+#               et npm run impact (recherche dans tous les dépôts présents).
+
+organisation: https://github.com/fabrice974
+
+sdk:
+  nom: maestro-sdk-ts
+  role: SDK TypeScript (client du contrat, kit d'application, simulation)
+  contrat: contrat/openapi.yaml
+  generer: npm run generer
+
+applications:
+  - nom: maestro-app-deal-flow
+    id: deal-flow
+    type: node
+    port: 4101
+    installer: npm install
+    demarrer: npm start
+  - nom: maestro-app-revue-diligente
+    id: revue-diligente
+    type: node
+    port: 4102
+    installer: npm install
+    demarrer: npm start
+  - nom: maestro-app-debourse
+    id: debourse
+    type: dotnet
+    port: 4103
+    installer: dotnet build
+    demarrer: dotnet run
+    contrat: contrat/openapi.yaml
+    generer: dotnet tool restore && dotnet nswag run nswag.json
+  - nom: maestro-app-suivi-periodique
+    id: suivi-periodique
+    type: node
+    port: 4104
+    installer: npm install
+    demarrer: npm start
+  - nom: maestro-app-desinvestissement
+    id: desinvestissement
+    type: node
+    port: 4105
+    installer: npm install
+    demarrer: npm start
