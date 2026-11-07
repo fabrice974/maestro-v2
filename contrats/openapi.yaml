@@ -1,0 +1,401 @@
+openapi: 3.0.3
+info:
+  title: Passerelle du backbone d'investissement
+  version: 1.0.0
+  description: |
+    Contrat unique entre les applications de sous-processus et le backbone Camunda.
+    Les applications ne connaissent ni Camunda, ni le BPMN, ni les clés d'instance :
+    elles manipulent des dossiers, des tâches, des documents et des événements métier.
+
+    Authentification : `Authorization: Bearer <jeton de l'application>` (PoC : config/securite.yaml ;
+    cible : Entra ID). L'utilisateur qui agit est transmis dans `X-Utilisateur` (PoC : id de
+    config/organisation.yaml ; cible : jeton utilisateur).
+
+    Une application ne voit et ne complète que SES types de tâches. Toute tentative refusée est
+    auditée et rendue visible dans le BPMN (étape « Consigner le refus » de tache-metier).
+servers:
+  - url: http://localhost:4000
+security:
+  - jetonApplication: []
+paths:
+  /organisation/personnes:
+    get:
+      operationId: listerPersonnes
+      summary: Personnes de l'organisation et leurs rôles
+      responses:
+        '200':
+          description: Liste des personnes
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Personne' } }
+  /dossiers:
+    get:
+      operationId: listerDossiers
+      summary: Dossiers d'investissement
+      responses:
+        '200':
+          description: Dossiers
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Dossier' } }
+    post:
+      operationId: creerDossier
+      summary: Enregistre une occasion d'investissement et démarre le backbone
+      parameters: [{ $ref: '#/components/parameters/Utilisateur' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NouveauDossier' }
+      responses:
+        '201':
+          description: Dossier créé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dossier' }
+        '403': { $ref: '#/components/responses/Refus' }
+        '503': { $ref: '#/components/responses/Erreur' }
+  /dossiers/{dossierId}:
+    get:
+      operationId: lireDossier
+      summary: Dossier avec ses tâches, documents et piste d'audit
+      parameters: [{ $ref: '#/components/parameters/DossierId' }]
+      responses:
+        '200':
+          description: Dossier détaillé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DossierDetaille' }
+        '404': { $ref: '#/components/responses/Erreur' }
+  /dossiers/{dossierId}/evenements/{type}:
+    post:
+      operationId: emettreEvenement
+      summary: Signale un fait métier au backbone (idempotent sur evenementId)
+      parameters:
+        - { $ref: '#/components/parameters/DossierId' }
+        - { $ref: '#/components/parameters/Utilisateur' }
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: [demande-tirage, remboursement-complet, decision-desinvestir] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Evenement' }
+      responses:
+        '202':
+          description: Événement accepté
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [doublon]
+                properties: { doublon: { type: boolean } }
+        '403': { $ref: '#/components/responses/Refus' }
+        '404': { $ref: '#/components/responses/Erreur' }
+  /taches:
+    get:
+      operationId: listerTaches
+      summary: Tâches de l'application appelante
+      parameters:
+        - { name: statut, in: query, schema: { type: string, enum: [ouverte, completee] } }
+        - { name: dossierId, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Tâches
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Tache' } }
+  /taches/{tacheId}:
+    get:
+      operationId: lireTache
+      summary: Tâche avec sa définition (champs, documents, décision), candidats et dossier
+      parameters: [{ $ref: '#/components/parameters/TacheId' }]
+      responses:
+        '200':
+          description: Tâche détaillée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TacheDetaillee' }
+        '403': { $ref: '#/components/responses/Refus' }
+        '404': { $ref: '#/components/responses/Erreur' }
+  /taches/{tacheId}/documents:
+    post:
+      operationId: deposerDocument
+      summary: Dépose une pièce justificative ; le backbone la range dans SharePoint et l'empreinte est auditée
+      parameters:
+        - { $ref: '#/components/parameters/TacheId' }
+        - { $ref: '#/components/parameters/Utilisateur' }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, fichier]
+              properties:
+                type: { type: string, description: Type de document attendu par la définition de la tâche }
+                fichier: { type: string, format: binary }
+      responses:
+        '200':
+          description: Document déposé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DocumentDepose' }
+        '409': { $ref: '#/components/responses/Erreur' }
+        '422': { $ref: '#/components/responses/Erreur' }
+        '503': { $ref: '#/components/responses/Erreur' }
+  /taches/{tacheId}/completer:
+    post:
+      operationId: completerTache
+      summary: Complète la tâche ; la passerelle valide sécurité, champs, dates et pièces avant d'informer le backbone
+      parameters:
+        - { $ref: '#/components/parameters/TacheId' }
+        - { $ref: '#/components/parameters/Utilisateur' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Completion' }
+      responses:
+        '200':
+          description: Tâche complétée
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [resultat]
+                properties: { resultat: { $ref: '#/components/schemas/Resultat' } }
+        '403': { $ref: '#/components/responses/Refus' }
+        '409': { $ref: '#/components/responses/Erreur' }
+        '422': { $ref: '#/components/responses/Erreur' }
+  /audit:
+    get:
+      operationId: listerAudit
+      summary: Piste d'audit (filtrable par dossier)
+      parameters: [{ name: dossierId, in: query, schema: { type: string } }]
+      responses:
+        '200':
+          description: Entrées d'audit
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/EntreeAudit' } }
+  /audit/verification:
+    get:
+      operationId: verifierAudit
+      summary: Vérifie l'intégrité de la chaîne d'audit
+      responses:
+        '200':
+          description: Résultat
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [valide, entrees, dernierHash]
+                properties:
+                  valide: { type: boolean }
+                  entrees: { type: integer }
+                  rompueA: { type: integer }
+                  dernierHash: { type: string }
+components:
+  securitySchemes:
+    jetonApplication: { type: http, scheme: bearer }
+  parameters:
+    Utilisateur:
+      name: X-Utilisateur
+      in: header
+      required: true
+      schema: { type: string }
+      description: Personne qui agit (id de config/organisation.yaml)
+    DossierId:
+      name: dossierId
+      in: path
+      required: true
+      schema: { type: string, pattern: '^INV-\d{4}-\d{4}$' }
+    TacheId:
+      name: tacheId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Erreur:
+      description: Erreur métier
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+    Refus:
+      description: Refus de sécurité (application non autorisée, rôle absent, séparation des tâches)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Erreur' }
+  schemas:
+    Erreur:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: APPLICATION_NON_AUTORISEE, ROLE_ABSENT, SEPARATION_TACHES, DONNEES_INVALIDES, TACHE_DEJA_COMPLETEE, SHAREPOINT_INDISPONIBLE, ...
+        message: { type: string }
+        erreurs:
+          type: array
+          items:
+            type: object
+            properties:
+              champ: { type: string }
+              erreur: { type: string }
+    Personne:
+      type: object
+      required: [id, nom, equipe, roles]
+      properties:
+        id: { type: string }
+        nom: { type: string }
+        equipe: { type: string }
+        titre: { type: string }
+        externe: { type: boolean }
+        roles: { type: array, items: { type: string } }
+    NouveauDossier:
+      type: object
+      required: [nom, contrepartie, classeActif, montant, secteur]
+      properties:
+        nom: { type: string }
+        contrepartie: { type: string }
+        classeActif: { type: string, enum: [credit-prive, placement-prive, infrastructure] }
+        montant: { type: number }
+        secteur: { type: string }
+    Dossier:
+      type: object
+      required: [dossierId, nom, contrepartie, classeActif, montant, secteur, phase, statut, creePar, creeLe]
+      properties:
+        dossierId: { type: string }
+        nom: { type: string }
+        contrepartie: { type: string }
+        classeActif: { type: string }
+        montant: { type: number }
+        secteur: { type: string }
+        phase: { type: string, description: 'deal-flow, revue-diligente, debourse, suivi-periodique, desinvestissement, cloture' }
+        statut: { type: string, enum: [actif, cloture, abandonne] }
+        urlDocuments: { type: string, description: Dossier SharePoint du dossier }
+        creePar: { type: string }
+        creeLe: { type: string, format: date-time }
+    DossierDetaille:
+      allOf:
+        - $ref: '#/components/schemas/Dossier'
+        - type: object
+          required: [taches, documents, audit]
+          properties:
+            taches: { type: array, items: { $ref: '#/components/schemas/Tache' } }
+            documents: { type: array, items: { $ref: '#/components/schemas/DocumentDepose' } }
+            audit: { type: array, items: { $ref: '#/components/schemas/EntreeAudit' } }
+    Tache:
+      type: object
+      required: [tacheId, dossierId, typeTache, roleRequis, application, statut, ouverteLe, echeance, escalades, refus]
+      properties:
+        tacheId: { type: string }
+        dossierId: { type: string }
+        typeTache: { type: string }
+        titre: { type: string }
+        roleRequis: { type: string }
+        application: { type: string }
+        statut: { type: string, enum: [ouverte, completee] }
+        contexte: { type: object, additionalProperties: true }
+        ouverteLe: { type: string, format: date-time }
+        echeance: { type: string, format: date-time }
+        escalades: { type: integer }
+        refus: { type: integer }
+        completeePar: { type: string }
+        completeeLe: { type: string, format: date-time }
+    Champ:
+      type: object
+      required: [nom, libelle, type, obligatoire]
+      properties:
+        nom: { type: string }
+        libelle: { type: string }
+        type: { type: string, enum: [texte, nombre, montant, date, booleen, choix] }
+        obligatoire: { type: boolean }
+        choix: { type: array, items: { type: string } }
+        regle: { type: string, enum: [passe, futur] }
+    DefinitionTache:
+      type: object
+      required: [typeTache, titre, phase, roleRequis, delaiSla, champs, documents]
+      properties:
+        typeTache: { type: string }
+        titre: { type: string }
+        phase: { type: string }
+        roleRequis: { type: string }
+        delaiSla: { type: string }
+        champs: { type: array, items: { $ref: '#/components/schemas/Champ' } }
+        documents:
+          type: array
+          items:
+            type: object
+            required: [type, libelle, obligatoire]
+            properties:
+              type: { type: string }
+              libelle: { type: string }
+              obligatoire: { type: boolean }
+        decision: { type: array, items: { type: string } }
+    TacheDetaillee:
+      allOf:
+        - $ref: '#/components/schemas/Tache'
+        - type: object
+          required: [definition, candidats, documents]
+          properties:
+            definition: { $ref: '#/components/schemas/DefinitionTache' }
+            candidats: { type: array, items: { $ref: '#/components/schemas/Personne' } }
+            documents: { type: array, items: { $ref: '#/components/schemas/DocumentDepose' } }
+            dossier: { $ref: '#/components/schemas/Dossier' }
+    DocumentDepose:
+      type: object
+      required: [id, nom, url, sha256, type]
+      properties:
+        id: { type: string }
+        nom: { type: string }
+        url: { type: string }
+        sha256: { type: string }
+        type: { type: string }
+        deposePar: { type: string }
+        deposeLe: { type: string, format: date-time }
+    Completion:
+      type: object
+      properties:
+        champs: { type: object, additionalProperties: true }
+        decision: { type: string }
+    Resultat:
+      type: object
+      required: [typeTache, champs, documents, completeePar]
+      properties:
+        typeTache: { type: string }
+        champs: { type: object, additionalProperties: true }
+        decision: { type: string, nullable: true }
+        documents: { type: array, items: { $ref: '#/components/schemas/DocumentDepose' } }
+        completeePar: { type: string }
+    Evenement:
+      type: object
+      required: [evenementId]
+      properties:
+        evenementId: { type: string }
+        donnees: { type: object, additionalProperties: true }
+    EntreeAudit:
+      type: object
+      required: [seq, horodatage, acteur, application, action, hash, hashPrecedent]
+      properties:
+        seq: { type: integer }
+        horodatage: { type: string, format: date-time }
+        acteur: { type: string }
+        application: { type: string }
+        action: { type: string }
+        dossierId: { type: string }
+        tacheId: { type: string }
+        details: { type: object, additionalProperties: true }
+        document:
+          type: object
+          properties:
+            nom: { type: string }
+            url: { type: string }
+            sha256: { type: string }
+        versionModele: { type: string }
+        cleInstance: { type: string }
+        hash: { type: string }
+        hashPrecedent: { type: string }

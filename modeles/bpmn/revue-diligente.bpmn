@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_revue-diligente" targetNamespace="http://maestro.poc/bpmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="revue-diligente" name="Revue diligente" isExecutable="true">
+    <bpmn:documentation>Chantiers parallèles confiés aux équipes internes et aux contributeurs externes, puis synthèse.</bpmn:documentation>
+    <bpmn:startEvent id="debut" name="Revue diligente lancée">
+      <bpmn:outgoing>Flux_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:businessRuleTask id="regle-chantiers" name="Déterminer les chantiers requis">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="chantiers-revue-diligente" resultVariable="chantiers" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="regle" value="chantiers-revue-diligente" />
+          <zeebe:header key="variable" value="chantiers" />
+        </zeebe:taskHeaders>
+        <zeebe:executionListeners>
+          <zeebe:executionListener eventType="end" retries="3" type="regle.consigner" />
+        </zeebe:executionListeners>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_1</bpmn:incoming>
+      <bpmn:outgoing>Flux_2</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:callActivity id="chantier" name="Chantier de revue diligente">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;revue.chantier&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="resultatChantier" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_2</bpmn:incoming>
+      <bpmn:outgoing>Flux_3</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics>
+        <bpmn:extensionElements>
+          <zeebe:loopCharacteristics inputCollection="=chantiers" inputElement="chantier" outputCollection="constats" outputElement="=resultatChantier" />
+        </bpmn:extensionElements>
+      </bpmn:multiInstanceLoopCharacteristics>
+    </bpmn:callActivity>
+    <bpmn:callActivity id="synthese" name="Synthèse et recommandation">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;revue.synthese&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="synthese" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_3</bpmn:incoming>
+      <bpmn:outgoing>Flux_4</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:endEvent id="fin" name="Revue diligente terminée">
+      <bpmn:incoming>Flux_4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="regle-chantiers" />
+    <bpmn:sequenceFlow id="Flux_2" sourceRef="regle-chantiers" targetRef="chantier" />
+    <bpmn:sequenceFlow id="Flux_3" sourceRef="chantier" targetRef="synthese" />
+    <bpmn:sequenceFlow id="Flux_4" sourceRef="synthese" targetRef="fin" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_revue-diligente">
+    <bpmndi:BPMNPlane id="BPMNPlane_revue-diligente" bpmnElement="revue-diligente">
+      <bpmndi:BPMNShape id="debut_di" bpmnElement="debut">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="regle-chantiers_di" bpmnElement="regle-chantiers">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="chantier_di" bpmnElement="chantier">
+        <dc:Bounds x="325" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="synthese_di" bpmnElement="synthese">
+        <dc:Bounds x="475" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin_di" bpmnElement="fin">
+        <dc:Bounds x="657" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flux_1_di" bpmnElement="Flux_1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_2_di" bpmnElement="Flux_2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="325" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_3_di" bpmnElement="Flux_3">
+        <di:waypoint x="425" y="70" />
+        <di:waypoint x="475" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_4_di" bpmnElement="Flux_4">
+        <di:waypoint x="575" y="70" />
+        <di:waypoint x="657" y="70" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

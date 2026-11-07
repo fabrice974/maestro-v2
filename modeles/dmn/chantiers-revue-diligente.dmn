@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_chantiers-revue-diligente" name="Chantiers de revue diligente requis" namespace="http://maestro.poc/dmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="chantiers-revue-diligente" name="Chantiers de revue diligente requis">
+    <decisionTable id="Table_chantiers_revue_diligente" hitPolicy="COLLECT">
+      <input id="Input_1" label="Classe d'actif"><inputExpression id="InputExpression_1" typeRef="string"><text>classeActif</text></inputExpression></input>
+      <output id="Output_1" label="Chantier" name="chantier" typeRef="string" />
+      <rule id="Rule_1"><description>Toujours requis</description><inputEntry id="In_1_1"><text>-</text></inputEntry><outputEntry id="Out_1_1"><text>&quot;financiere&quot;</text></outputEntry></rule>
+      <rule id="Rule_2"><description>Toujours requis</description><inputEntry id="In_2_1"><text>-</text></inputEntry><outputEntry id="Out_2_1"><text>&quot;juridique&quot;</text></outputEntry></rule>
+      <rule id="Rule_3"><inputEntry id="In_3_1"><text>&quot;placement-prive&quot;</text></inputEntry><outputEntry id="Out_3_1"><text>&quot;fiscale&quot;</text></outputEntry></rule>
+      <rule id="Rule_4"><inputEntry id="In_4_1"><text>&quot;placement-prive&quot;</text></inputEntry><outputEntry id="Out_4_1"><text>&quot;esg&quot;</text></outputEntry></rule>
+      <rule id="Rule_5"><inputEntry id="In_5_1"><text>&quot;infrastructure&quot;</text></inputEntry><outputEntry id="Out_5_1"><text>&quot;technique&quot;</text></outputEntry></rule>
+      <rule id="Rule_6"><inputEntry id="In_6_1"><text>&quot;infrastructure&quot;</text></inputEntry><outputEntry id="Out_6_1"><text>&quot;assurances&quot;</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="Diag_chantiers_revue_diligente">
+      <dmndi:DMNShape id="Shape_chantiers_revue_diligente" dmnElementRef="chantiers-revue-diligente">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

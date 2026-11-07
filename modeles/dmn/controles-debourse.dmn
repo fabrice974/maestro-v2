@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_controles-debourse" name="Contrôles requis pour un déboursé" namespace="http://maestro.poc/dmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="controles-debourse" name="Contrôles requis pour un déboursé">
+    <decisionTable id="Table_controles_debourse" hitPolicy="FIRST">
+      <input id="Input_1" label="Montant du tirage ($)"><inputExpression id="InputExpression_1" typeRef="number"><text>montantTirage</text></inputExpression></input>
+      <output id="Output_1" label="Approbation conformité requise" name="conformiteRequise" typeRef="boolean" />
+      <rule id="Rule_1"><description>Seuil conformité</description><inputEntry id="In_1_1"><text>&gt; 50000000</text></inputEntry><outputEntry id="Out_1_1"><text>true</text></outputEntry></rule>
+      <rule id="Rule_2"><inputEntry id="In_2_1"><text>-</text></inputEntry><outputEntry id="Out_2_1"><text>false</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="Diag_controles_debourse">
+      <dmndi:DMNShape id="Shape_controles_debourse" dmnElementRef="controles-debourse">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

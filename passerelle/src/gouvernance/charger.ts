@@ -22,7 +22,7 @@ export interface Gouvernance {
   separationTaches: { tache: string; interditSi: string[] }[];
 }
 
-function lire<T>(fichier: string, schema: z.ZodType<T>): T {
+function lire<T>(fichier: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>): T {
   const brut = parse(readFileSync(fichier, 'utf8'));
   const r = schema.safeParse(brut);
   if (!r.success) {

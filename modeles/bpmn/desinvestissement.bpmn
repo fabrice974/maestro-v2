@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_desinvestissement" targetNamespace="http://maestro.poc/bpmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="desinvestissement" name="Désinvestissement" isExecutable="true">
+    <bpmn:documentation>Thèse de sortie, évaluation, approbation, exécution.</bpmn:documentation>
+    <bpmn:startEvent id="debut" name="Sortie envisagée">
+      <bpmn:outgoing>Flux_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="these" name="Thèse de sortie">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;desinvest.these-sortie&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="theseSortie" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_1</bpmn:incoming>
+      <bpmn:outgoing>Flux_2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:callActivity id="evaluation" name="Évaluation de la position">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;desinvest.evaluation&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="evaluation" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_2</bpmn:incoming>
+      <bpmn:outgoing>Flux_3</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:businessRuleTask id="regle-approbation" name="Déterminer l&#39;instance d&#39;approbation">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="niveau-approbation" resultVariable="instanceApprobation" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=evaluation.champs.valeurEstimee" target="montantDecision" />
+          <zeebe:input source="=classeActif" target="classeActif" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="regle" value="niveau-approbation" />
+          <zeebe:header key="variable" value="instanceApprobation" />
+        </zeebe:taskHeaders>
+        <zeebe:executionListeners>
+          <zeebe:executionListener eventType="end" retries="3" type="regle.consigner" />
+        </zeebe:executionListeners>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_3</bpmn:incoming>
+      <bpmn:outgoing>Flux_4</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:callActivity id="approbation" name="Approbation du désinvestissement">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;desinvest.approbation&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="approbationSortie" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_4</bpmn:incoming>
+      <bpmn:outgoing>Flux_5</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-approuve" name="Approuvé ?">
+      <bpmn:incoming>Flux_5</bpmn:incoming>
+      <bpmn:outgoing>Flux_6</bpmn:outgoing>
+      <bpmn:outgoing>Flux_7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="execution" name="Exécution de la sortie">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;desinvest.execution&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="execution" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_6</bpmn:incoming>
+      <bpmn:outgoing>Flux_8</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:scriptTask id="marquer-sorti" name="Sortie réalisée">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;sorti&#34;" resultVariable="issueDesinvestissement" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_8</bpmn:incoming>
+      <bpmn:outgoing>Flux_9</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="fin-sorti" name="Position sortie">
+      <bpmn:incoming>Flux_9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:scriptTask id="marquer-refus" name="Sortie refusée">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;refuse&#34;" resultVariable="issueDesinvestissement" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_7</bpmn:incoming>
+      <bpmn:outgoing>Flux_10</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="fin-refus" name="Sortie refusée">
+      <bpmn:incoming>Flux_10</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="these" />
+    <bpmn:sequenceFlow id="Flux_2" sourceRef="these" targetRef="evaluation" />
+    <bpmn:sequenceFlow id="Flux_3" sourceRef="evaluation" targetRef="regle-approbation" />
+    <bpmn:sequenceFlow id="Flux_4" sourceRef="regle-approbation" targetRef="approbation" />
+    <bpmn:sequenceFlow id="Flux_5" sourceRef="approbation" targetRef="gw-approuve" />
+    <bpmn:sequenceFlow id="Flux_6" name="approuvé" sourceRef="gw-approuve" targetRef="execution">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationSortie.decision = "approuve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_7" name="refusé" sourceRef="gw-approuve" targetRef="marquer-refus">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationSortie.decision != "approuve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_8" sourceRef="execution" targetRef="marquer-sorti" />
+    <bpmn:sequenceFlow id="Flux_9" sourceRef="marquer-sorti" targetRef="fin-sorti" />
+    <bpmn:sequenceFlow id="Flux_10" sourceRef="marquer-refus" targetRef="fin-refus" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_desinvestissement">
+    <bpmndi:BPMNPlane id="BPMNPlane_desinvestissement" bpmnElement="desinvestissement">
+      <bpmndi:BPMNShape id="debut_di" bpmnElement="debut">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="these_di" bpmnElement="these">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="evaluation_di" bpmnElement="evaluation">
+        <dc:Bounds x="325" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="regle-approbation_di" bpmnElement="regle-approbation">
+        <dc:Bounds x="475" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="approbation_di" bpmnElement="approbation">
+        <dc:Bounds x="625" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-approuve_di" bpmnElement="gw-approuve" isMarkerVisible="true">
+        <dc:Bounds x="800" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="execution_di" bpmnElement="execution">
+        <dc:Bounds x="925" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="marquer-sorti_di" bpmnElement="marquer-sorti">
+        <dc:Bounds x="1075" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-sorti_di" bpmnElement="fin-sorti">
+        <dc:Bounds x="1257" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="marquer-refus_di" bpmnElement="marquer-refus">
+        <dc:Bounds x="925" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-refus_di" bpmnElement="fin-refus">
+        <dc:Bounds x="1107" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flux_1_di" bpmnElement="Flux_1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_2_di" bpmnElement="Flux_2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="325" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_3_di" bpmnElement="Flux_3">
+        <di:waypoint x="425" y="70" />
+        <di:waypoint x="475" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_4_di" bpmnElement="Flux_4">
+        <di:waypoint x="575" y="70" />
+        <di:waypoint x="625" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_5_di" bpmnElement="Flux_5">
+        <di:waypoint x="725" y="70" />
+        <di:waypoint x="800" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_6_di" bpmnElement="Flux_6">
+        <di:waypoint x="850" y="70" />
+        <di:waypoint x="925" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_7_di" bpmnElement="Flux_7">
+        <di:waypoint x="825" y="95" />
+        <di:waypoint x="825" y="210" />
+        <di:waypoint x="925" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_8_di" bpmnElement="Flux_8">
+        <di:waypoint x="1025" y="70" />
+        <di:waypoint x="1075" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_9_di" bpmnElement="Flux_9">
+        <di:waypoint x="1175" y="70" />
+        <di:waypoint x="1257" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_10_di" bpmnElement="Flux_10">
+        <di:waypoint x="1025" y="210" />
+        <di:waypoint x="1107" y="210" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

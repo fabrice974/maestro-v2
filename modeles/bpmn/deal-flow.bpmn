@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_deal-flow" targetNamespace="http://maestro.poc/bpmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="deal-flow" name="Deal flow" isExecutable="true">
+    <bpmn:documentation>Du stade « à venir » jusqu'au stade « assigné ».</bpmn:documentation>
+    <bpmn:startEvent id="debut" name="Occasion à venir">
+      <bpmn:outgoing>Flux_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="qualifier" name="Qualifier l&#39;occasion">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.qualifier-occasion&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="qualification" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_1</bpmn:incoming>
+      <bpmn:outgoing>Flux_2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:businessRuleTask id="regle-admissibilite" name="Filtrage : admissibilité au mandat">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="admissibilite-mandat" resultVariable="admissibilite" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="regle" value="admissibilite-mandat" />
+          <zeebe:header key="variable" value="admissibilite" />
+        </zeebe:taskHeaders>
+        <zeebe:executionListeners>
+          <zeebe:executionListener eventType="end" retries="3" type="regle.consigner" />
+        </zeebe:executionListeners>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_2</bpmn:incoming>
+      <bpmn:outgoing>Flux_3</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:exclusiveGateway id="gw-admissible" name="Admissible ?">
+      <bpmn:incoming>Flux_3</bpmn:incoming>
+      <bpmn:outgoing>Flux_4</bpmn:outgoing>
+      <bpmn:outgoing>Flux_5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="analyse" name="Analyse préliminaire et mémo">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.analyse-preliminaire&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="analyse" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_4</bpmn:incoming>
+      <bpmn:outgoing>Flux_6</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-analyse" name="Poursuivre ?">
+      <bpmn:incoming>Flux_6</bpmn:incoming>
+      <bpmn:outgoing>Flux_7</bpmn:outgoing>
+      <bpmn:outgoing>Flux_8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="principe" name="Approbation de principe">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.approbation-principe&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="approbationPrincipe" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_7</bpmn:incoming>
+      <bpmn:outgoing>Flux_9</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-principe" name="Approuvé ?">
+      <bpmn:incoming>Flux_9</bpmn:incoming>
+      <bpmn:outgoing>Flux_10</bpmn:outgoing>
+      <bpmn:outgoing>Flux_11</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="revue" name="Revue diligente">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="revue-diligente" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_10</bpmn:incoming>
+      <bpmn:outgoing>Flux_12</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-revue" name="Recommandation ?">
+      <bpmn:incoming>Flux_12</bpmn:incoming>
+      <bpmn:outgoing>Flux_13</bpmn:outgoing>
+      <bpmn:outgoing>Flux_14</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="structuration" name="Structuration et négociation">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.structuration&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="structuration" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_13</bpmn:incoming>
+      <bpmn:outgoing>Flux_15</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:businessRuleTask id="regle-approbation" name="Déterminer l&#39;instance d&#39;approbation">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="niveau-approbation" resultVariable="instanceApprobation" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=structuration.champs.montantEngagement" target="montantDecision" />
+          <zeebe:input source="=classeActif" target="classeActif" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="regle" value="niveau-approbation" />
+          <zeebe:header key="variable" value="instanceApprobation" />
+        </zeebe:taskHeaders>
+        <zeebe:executionListeners>
+          <zeebe:executionListener eventType="end" retries="3" type="regle.consigner" />
+        </zeebe:executionListeners>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_15</bpmn:incoming>
+      <bpmn:outgoing>Flux_16</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:callActivity id="finale" name="Approbation finale">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.approbation-finale&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="approbationFinale" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_16</bpmn:incoming>
+      <bpmn:outgoing>Flux_17</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-finale" name="Approuvé ?">
+      <bpmn:incoming>Flux_17</bpmn:incoming>
+      <bpmn:outgoing>Flux_18</bpmn:outgoing>
+      <bpmn:outgoing>Flux_19</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="juridique" name="Documentation juridique et clôture">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.documentation-juridique&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="documentation" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_18</bpmn:incoming>
+      <bpmn:outgoing>Flux_20</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:callActivity id="assigner" name="Assigner le mandat">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="tache-metier" propagateAllChildVariables="false" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=&#34;dealflow.assigner-mandat&#34;" target="typeTache" />
+          <zeebe:output source="=resultat" target="mandat" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_20</bpmn:incoming>
+      <bpmn:outgoing>Flux_21</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:scriptTask id="marquer-assigne" name="Stade : assigné">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;assigne&#34;" resultVariable="issueDealFlow" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_21</bpmn:incoming>
+      <bpmn:outgoing>Flux_22</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="fin-assigne" name="Mandat assigné">
+      <bpmn:incoming>Flux_22</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="fusion-abandon" name="">
+      <bpmn:incoming>Flux_5</bpmn:incoming>
+      <bpmn:incoming>Flux_8</bpmn:incoming>
+      <bpmn:incoming>Flux_11</bpmn:incoming>
+      <bpmn:incoming>Flux_14</bpmn:incoming>
+      <bpmn:incoming>Flux_19</bpmn:incoming>
+      <bpmn:outgoing>Flux_23</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="marquer-abandon" name="Stade : abandonné">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;abandonne&#34;" resultVariable="issueDealFlow" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_23</bpmn:incoming>
+      <bpmn:outgoing>Flux_24</bpmn:outgoing>
+    </bpmn:scriptTask>
+    <bpmn:endEvent id="fin-abandon" name="Occasion abandonnée">
+      <bpmn:incoming>Flux_24</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="qualifier" />
+    <bpmn:sequenceFlow id="Flux_2" sourceRef="qualifier" targetRef="regle-admissibilite" />
+    <bpmn:sequenceFlow id="Flux_3" sourceRef="regle-admissibilite" targetRef="gw-admissible" />
+    <bpmn:sequenceFlow id="Flux_4" name="oui" sourceRef="gw-admissible" targetRef="analyse">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=admissibilite.admissible = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_5" name="non" sourceRef="gw-admissible" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=admissibilite.admissible = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_6" sourceRef="analyse" targetRef="gw-analyse" />
+    <bpmn:sequenceFlow id="Flux_7" name="poursuivre" sourceRef="gw-analyse" targetRef="principe">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=analyse.decision = "poursuivre"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_8" name="abandonner" sourceRef="gw-analyse" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=analyse.decision != "poursuivre"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_9" sourceRef="principe" targetRef="gw-principe" />
+    <bpmn:sequenceFlow id="Flux_10" name="approuvé" sourceRef="gw-principe" targetRef="revue">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationPrincipe.decision = "approuve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_11" name="refusé" sourceRef="gw-principe" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationPrincipe.decision != "approuve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_12" sourceRef="revue" targetRef="gw-revue" />
+    <bpmn:sequenceFlow id="Flux_13" name="favorable" sourceRef="gw-revue" targetRef="structuration">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=synthese.decision != "defavorable"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_14" name="défavorable" sourceRef="gw-revue" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=synthese.decision = "defavorable"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_15" sourceRef="structuration" targetRef="regle-approbation" />
+    <bpmn:sequenceFlow id="Flux_16" sourceRef="regle-approbation" targetRef="finale" />
+    <bpmn:sequenceFlow id="Flux_17" sourceRef="finale" targetRef="gw-finale" />
+    <bpmn:sequenceFlow id="Flux_18" name="approuvé" sourceRef="gw-finale" targetRef="juridique">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationFinale.decision = "approuve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_19" name="refusé" sourceRef="gw-finale" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=approbationFinale.decision != "approuve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_20" sourceRef="juridique" targetRef="assigner" />
+    <bpmn:sequenceFlow id="Flux_21" sourceRef="assigner" targetRef="marquer-assigne" />
+    <bpmn:sequenceFlow id="Flux_22" sourceRef="marquer-assigne" targetRef="fin-assigne" />
+    <bpmn:sequenceFlow id="Flux_23" sourceRef="fusion-abandon" targetRef="marquer-abandon" />
+    <bpmn:sequenceFlow id="Flux_24" sourceRef="marquer-abandon" targetRef="fin-abandon" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_deal-flow">
+    <bpmndi:BPMNPlane id="BPMNPlane_deal-flow" bpmnElement="deal-flow">
+      <bpmndi:BPMNShape id="debut_di" bpmnElement="debut">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="qualifier_di" bpmnElement="qualifier">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="regle-admissibilite_di" bpmnElement="regle-admissibilite">
+        <dc:Bounds x="325" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-admissible_di" bpmnElement="gw-admissible" isMarkerVisible="true">
+        <dc:Bounds x="500" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="analyse_di" bpmnElement="analyse">
+        <dc:Bounds x="625" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-analyse_di" bpmnElement="gw-analyse" isMarkerVisible="true">
+        <dc:Bounds x="800" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="principe_di" bpmnElement="principe">
+        <dc:Bounds x="925" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-principe_di" bpmnElement="gw-principe" isMarkerVisible="true">
+        <dc:Bounds x="1100" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="revue_di" bpmnElement="revue">
+        <dc:Bounds x="1225" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-revue_di" bpmnElement="gw-revue" isMarkerVisible="true">
+        <dc:Bounds x="1400" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="structuration_di" bpmnElement="structuration">
+        <dc:Bounds x="1525" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="regle-approbation_di" bpmnElement="regle-approbation">
+        <dc:Bounds x="1675" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="finale_di" bpmnElement="finale">
+        <dc:Bounds x="1825" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-finale_di" bpmnElement="gw-finale" isMarkerVisible="true">
+        <dc:Bounds x="2000" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="juridique_di" bpmnElement="juridique">
+        <dc:Bounds x="2125" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="assigner_di" bpmnElement="assigner">
+        <dc:Bounds x="2275" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="marquer-assigne_di" bpmnElement="marquer-assigne">
+        <dc:Bounds x="2425" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-assigne_di" bpmnElement="fin-assigne">
+        <dc:Bounds x="2607" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fusion-abandon_di" bpmnElement="fusion-abandon" isMarkerVisible="true">
+        <dc:Bounds x="2750" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="marquer-abandon_di" bpmnElement="marquer-abandon">
+        <dc:Bounds x="2875" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-abandon_di" bpmnElement="fin-abandon">
+        <dc:Bounds x="3057" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flux_1_di" bpmnElement="Flux_1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_2_di" bpmnElement="Flux_2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="325" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_3_di" bpmnElement="Flux_3">
+        <di:waypoint x="425" y="70" />
+        <di:waypoint x="500" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_4_di" bpmnElement="Flux_4">
+        <di:waypoint x="550" y="70" />
+        <di:waypoint x="625" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_5_di" bpmnElement="Flux_5">
+        <di:waypoint x="525" y="95" />
+        <di:waypoint x="525" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_6_di" bpmnElement="Flux_6">
+        <di:waypoint x="725" y="70" />
+        <di:waypoint x="800" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_7_di" bpmnElement="Flux_7">
+        <di:waypoint x="850" y="70" />
+        <di:waypoint x="925" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_8_di" bpmnElement="Flux_8">
+        <di:waypoint x="825" y="95" />
+        <di:waypoint x="825" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_9_di" bpmnElement="Flux_9">
+        <di:waypoint x="1025" y="70" />
+        <di:waypoint x="1100" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_10_di" bpmnElement="Flux_10">
+        <di:waypoint x="1150" y="70" />
+        <di:waypoint x="1225" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_11_di" bpmnElement="Flux_11">
+        <di:waypoint x="1125" y="95" />
+        <di:waypoint x="1125" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_12_di" bpmnElement="Flux_12">
+        <di:waypoint x="1325" y="70" />
+        <di:waypoint x="1400" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_13_di" bpmnElement="Flux_13">
+        <di:waypoint x="1450" y="70" />
+        <di:waypoint x="1525" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_14_di" bpmnElement="Flux_14">
+        <di:waypoint x="1425" y="95" />
+        <di:waypoint x="1425" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_15_di" bpmnElement="Flux_15">
+        <di:waypoint x="1625" y="70" />
+        <di:waypoint x="1675" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_16_di" bpmnElement="Flux_16">
+        <di:waypoint x="1775" y="70" />
+        <di:waypoint x="1825" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_17_di" bpmnElement="Flux_17">
+        <di:waypoint x="1925" y="70" />
+        <di:waypoint x="2000" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_18_di" bpmnElement="Flux_18">
+        <di:waypoint x="2050" y="70" />
+        <di:waypoint x="2125" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_19_di" bpmnElement="Flux_19">
+        <di:waypoint x="2025" y="95" />
+        <di:waypoint x="2025" y="140" />
+        <di:waypoint x="2775" y="140" />
+        <di:waypoint x="2775" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_20_di" bpmnElement="Flux_20">
+        <di:waypoint x="2225" y="70" />
+        <di:waypoint x="2275" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_21_di" bpmnElement="Flux_21">
+        <di:waypoint x="2375" y="70" />
+        <di:waypoint x="2425" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_22_di" bpmnElement="Flux_22">
+        <di:waypoint x="2525" y="70" />
+        <di:waypoint x="2607" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_23_di" bpmnElement="Flux_23">
+        <di:waypoint x="2800" y="70" />
+        <di:waypoint x="2875" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_24_di" bpmnElement="Flux_24">
+        <di:waypoint x="2975" y="70" />
+        <di:waypoint x="3057" y="70" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

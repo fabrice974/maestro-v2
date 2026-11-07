@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_admissibilite-mandat" name="Admissibilité au mandat" namespace="http://maestro.poc/dmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="admissibilite-mandat" name="Admissibilité au mandat">
+    <decisionTable id="Table_admissibilite_mandat" hitPolicy="FIRST">
+      <input id="Input_1" label="Secteur"><inputExpression id="InputExpression_1" typeRef="string"><text>secteur</text></inputExpression></input>
+      <input id="Input_2" label="Montant ($)"><inputExpression id="InputExpression_2" typeRef="number"><text>montant</text></inputExpression></input>
+      <output id="Output_1" label="Admissible" name="admissible" typeRef="boolean" />
+      <output id="Output_2" label="Motif" name="motif" typeRef="string" />
+      <rule id="Rule_1"><inputEntry id="In_1_1"><text>&quot;charbon&quot;,&quot;armement&quot;,&quot;tabac&quot;,&quot;sables-bitumineux&quot;</text></inputEntry><inputEntry id="In_1_2"><text>-</text></inputEntry><outputEntry id="Out_1_1"><text>false</text></outputEntry><outputEntry id="Out_1_2"><text>&quot;Secteur exclu par la politique ESG&quot;</text></outputEntry></rule>
+      <rule id="Rule_2"><inputEntry id="In_2_1"><text>-</text></inputEntry><inputEntry id="In_2_2"><text>&lt; 10000000</text></inputEntry><outputEntry id="Out_2_1"><text>false</text></outputEntry><outputEntry id="Out_2_2"><text>&quot;Sous le ticket minimal du mandat (10 M$)&quot;</text></outputEntry></rule>
+      <rule id="Rule_3"><inputEntry id="In_3_1"><text>-</text></inputEntry><inputEntry id="In_3_2"><text>&gt; 750000000</text></inputEntry><outputEntry id="Out_3_1"><text>false</text></outputEntry><outputEntry id="Out_3_2"><text>&quot;Au-delà de la limite de concentration (750 M$)&quot;</text></outputEntry></rule>
+      <rule id="Rule_4"><inputEntry id="In_4_1"><text>-</text></inputEntry><inputEntry id="In_4_2"><text>-</text></inputEntry><outputEntry id="Out_4_1"><text>true</text></outputEntry><outputEntry id="Out_4_2"><text>&quot;Admissible&quot;</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="Diag_admissibilite_mandat">
+      <dmndi:DMNShape id="Shape_admissibilite_mandat" dmnElementRef="admissibilite-mandat">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

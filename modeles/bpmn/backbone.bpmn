@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_backbone" targetNamespace="http://maestro.poc/bpmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="backbone" name="Backbone — processus d&#39;investissement de bout en bout" isExecutable="true">
+    <bpmn:documentation>Pré-investissement : deal flow jusqu’au premier déboursé. Post-investissement : suivi mensuel, tirages additionnels, désinvestissement.</bpmn:documentation>
+    <bpmn:startEvent id="debut" name="Occasion enregistrée">
+      <bpmn:outgoing>Flux_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="deal-flow" name="Deal flow">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="deal-flow" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_1</bpmn:incoming>
+      <bpmn:outgoing>Flux_2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-deal" name="Mandat assigné ?">
+      <bpmn:incoming>Flux_2</bpmn:incoming>
+      <bpmn:outgoing>Flux_3</bpmn:outgoing>
+      <bpmn:outgoing>Flux_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="debourse" name="Premier déboursé">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="debourse" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_3</bpmn:incoming>
+      <bpmn:outgoing>Flux_5</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-debourse" name="Fonds déboursés ?">
+      <bpmn:incoming>Flux_5</bpmn:incoming>
+      <bpmn:outgoing>Flux_6</bpmn:outgoing>
+      <bpmn:outgoing>Flux_7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="phase-post" name="Passer en post-investissement">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="dossier.phase" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="phase" value="suivi-periodique" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_6</bpmn:incoming>
+      <bpmn:outgoing>Flux_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="fusion-suivi" name="">
+      <bpmn:incoming>Flux_8</bpmn:incoming>
+      <bpmn:incoming>Flux_17</bpmn:incoming>
+      <bpmn:outgoing>Flux_9</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="suivi" name="Suivi périodique (mensuel)">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="suivi-periodique" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_9</bpmn:incoming>
+      <bpmn:outgoing>Flux_10</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:boundaryEvent id="tirage" name="Demande de tirage" cancelActivity="false" attachedToRef="suivi">
+      <bpmn:outgoing>Flux_11</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Msg_demande_tirage" />
+    </bpmn:boundaryEvent>
+    <bpmn:callActivity id="tirage-debourse" name="Tirage additionnel">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="debourse" propagateAllChildVariables="false" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_11</bpmn:incoming>
+      <bpmn:outgoing>Flux_12</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:endEvent id="fin-tirage" name="Tirage traité">
+      <bpmn:incoming>Flux_12</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="gw-suivi" name="Issue du suivi ?">
+      <bpmn:incoming>Flux_10</bpmn:incoming>
+      <bpmn:outgoing>Flux_13</bpmn:outgoing>
+      <bpmn:outgoing>Flux_14</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="desinvestissement" name="Désinvestissement">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="desinvestissement" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_13</bpmn:incoming>
+      <bpmn:outgoing>Flux_15</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="gw-sortie" name="Sortie réalisée ?">
+      <bpmn:incoming>Flux_15</bpmn:incoming>
+      <bpmn:outgoing>Flux_16</bpmn:outgoing>
+      <bpmn:outgoing>Flux_17</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="fusion-cloture" name="">
+      <bpmn:incoming>Flux_14</bpmn:incoming>
+      <bpmn:incoming>Flux_16</bpmn:incoming>
+      <bpmn:outgoing>Flux_18</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="cloturer" name="Clôturer le dossier">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="dossier.phase" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="phase" value="cloture" />
+          <zeebe:header key="statut" value="cloture" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_18</bpmn:incoming>
+      <bpmn:outgoing>Flux_19</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="fin-cloture" name="Dossier clôturé">
+      <bpmn:incoming>Flux_19</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="fusion-abandon" name="">
+      <bpmn:incoming>Flux_4</bpmn:incoming>
+      <bpmn:incoming>Flux_7</bpmn:incoming>
+      <bpmn:outgoing>Flux_20</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="abandonner" name="Marquer le dossier abandonné">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="dossier.phase" retries="3" />
+        <zeebe:taskHeaders>
+          <zeebe:header key="statut" value="abandonne" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_20</bpmn:incoming>
+      <bpmn:outgoing>Flux_21</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="fin-abandon" name="Dossier abandonné">
+      <bpmn:incoming>Flux_21</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="deal-flow" />
+    <bpmn:sequenceFlow id="Flux_2" sourceRef="deal-flow" targetRef="gw-deal" />
+    <bpmn:sequenceFlow id="Flux_3" name="assigné" sourceRef="gw-deal" targetRef="debourse">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueDealFlow = "assigne"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_4" name="abandonné" sourceRef="gw-deal" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueDealFlow != "assigne"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_5" sourceRef="debourse" targetRef="gw-debourse" />
+    <bpmn:sequenceFlow id="Flux_6" name="oui" sourceRef="gw-debourse" targetRef="phase-post">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueDebourse = "debourse"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_7" name="refusé" sourceRef="gw-debourse" targetRef="fusion-abandon">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueDebourse != "debourse"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_8" sourceRef="phase-post" targetRef="fusion-suivi" />
+    <bpmn:sequenceFlow id="Flux_9" sourceRef="fusion-suivi" targetRef="suivi" />
+    <bpmn:sequenceFlow id="Flux_10" sourceRef="suivi" targetRef="gw-suivi" />
+    <bpmn:sequenceFlow id="Flux_11" sourceRef="tirage" targetRef="tirage-debourse" />
+    <bpmn:sequenceFlow id="Flux_12" sourceRef="tirage-debourse" targetRef="fin-tirage" />
+    <bpmn:sequenceFlow id="Flux_13" name="désinvestir" sourceRef="gw-suivi" targetRef="desinvestissement">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueSuivi = "desinvestir"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_14" name="remboursé" sourceRef="gw-suivi" targetRef="fusion-cloture">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueSuivi = "rembourse"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_15" sourceRef="desinvestissement" targetRef="gw-sortie" />
+    <bpmn:sequenceFlow id="Flux_16" name="sortie réalisée" sourceRef="gw-sortie" targetRef="fusion-cloture">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueDesinvestissement = "sorti"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_17" name="refusée : reprise du suivi" sourceRef="gw-sortie" targetRef="fusion-suivi">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=issueDesinvestissement != "sorti"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flux_18" sourceRef="fusion-cloture" targetRef="cloturer" />
+    <bpmn:sequenceFlow id="Flux_19" sourceRef="cloturer" targetRef="fin-cloture" />
+    <bpmn:sequenceFlow id="Flux_20" sourceRef="fusion-abandon" targetRef="abandonner" />
+    <bpmn:sequenceFlow id="Flux_21" sourceRef="abandonner" targetRef="fin-abandon" />
+  </bpmn:process>
+  <bpmn:message id="Msg_demande_tirage" name="demande-tirage">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=dossierId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_backbone">
+    <bpmndi:BPMNPlane id="BPMNPlane_backbone" bpmnElement="backbone">
+      <bpmndi:BPMNShape id="debut_di" bpmnElement="debut">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="deal-flow_di" bpmnElement="deal-flow">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-deal_di" bpmnElement="gw-deal" isMarkerVisible="true">
+        <dc:Bounds x="350" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="debourse_di" bpmnElement="debourse">
+        <dc:Bounds x="475" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-debourse_di" bpmnElement="gw-debourse" isMarkerVisible="true">
+        <dc:Bounds x="650" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="phase-post_di" bpmnElement="phase-post">
+        <dc:Bounds x="775" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fusion-suivi_di" bpmnElement="fusion-suivi" isMarkerVisible="true">
+        <dc:Bounds x="950" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="suivi_di" bpmnElement="suivi">
+        <dc:Bounds x="1075" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="tirage_di" bpmnElement="tirage">
+        <dc:Bounds x="1107" y="92" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-suivi_di" bpmnElement="gw-suivi" isMarkerVisible="true">
+        <dc:Bounds x="1250" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="desinvestissement_di" bpmnElement="desinvestissement">
+        <dc:Bounds x="1375" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw-sortie_di" bpmnElement="gw-sortie" isMarkerVisible="true">
+        <dc:Bounds x="1550" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fusion-cloture_di" bpmnElement="fusion-cloture" isMarkerVisible="true">
+        <dc:Bounds x="1700" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cloturer_di" bpmnElement="cloturer">
+        <dc:Bounds x="1825" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-cloture_di" bpmnElement="fin-cloture">
+        <dc:Bounds x="2007" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fusion-abandon_di" bpmnElement="fusion-abandon" isMarkerVisible="true">
+        <dc:Bounds x="2150" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="abandonner_di" bpmnElement="abandonner">
+        <dc:Bounds x="2275" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-abandon_di" bpmnElement="fin-abandon">
+        <dc:Bounds x="2457" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="tirage-debourse_di" bpmnElement="tirage-debourse">
+        <dc:Bounds x="1225" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin-tirage_di" bpmnElement="fin-tirage">
+        <dc:Bounds x="1407" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flux_1_di" bpmnElement="Flux_1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_2_di" bpmnElement="Flux_2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="350" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_3_di" bpmnElement="Flux_3">
+        <di:waypoint x="400" y="70" />
+        <di:waypoint x="475" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_4_di" bpmnElement="Flux_4">
+        <di:waypoint x="375" y="95" />
+        <di:waypoint x="375" y="140" />
+        <di:waypoint x="2175" y="140" />
+        <di:waypoint x="2175" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_5_di" bpmnElement="Flux_5">
+        <di:waypoint x="575" y="70" />
+        <di:waypoint x="650" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_6_di" bpmnElement="Flux_6">
+        <di:waypoint x="700" y="70" />
+        <di:waypoint x="775" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_7_di" bpmnElement="Flux_7">
+        <di:waypoint x="675" y="95" />
+        <di:waypoint x="675" y="140" />
+        <di:waypoint x="2175" y="140" />
+        <di:waypoint x="2175" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_8_di" bpmnElement="Flux_8">
+        <di:waypoint x="875" y="70" />
+        <di:waypoint x="950" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_9_di" bpmnElement="Flux_9">
+        <di:waypoint x="1000" y="70" />
+        <di:waypoint x="1075" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_10_di" bpmnElement="Flux_10">
+        <di:waypoint x="1175" y="70" />
+        <di:waypoint x="1250" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_11_di" bpmnElement="Flux_11">
+        <di:waypoint x="1125" y="128" />
+        <di:waypoint x="1125" y="210" />
+        <di:waypoint x="1225" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_13_di" bpmnElement="Flux_13">
+        <di:waypoint x="1300" y="70" />
+        <di:waypoint x="1375" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_14_di" bpmnElement="Flux_14">
+        <di:waypoint x="1275" y="95" />
+        <di:waypoint x="1275" y="140" />
+        <di:waypoint x="1725" y="140" />
+        <di:waypoint x="1725" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_15_di" bpmnElement="Flux_15">
+        <di:waypoint x="1475" y="70" />
+        <di:waypoint x="1550" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_16_di" bpmnElement="Flux_16">
+        <di:waypoint x="1600" y="70" />
+        <di:waypoint x="1700" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_17_di" bpmnElement="Flux_17">
+        <di:waypoint x="1575" y="95" />
+        <di:waypoint x="1575" y="140" />
+        <di:waypoint x="975" y="140" />
+        <di:waypoint x="975" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_18_di" bpmnElement="Flux_18">
+        <di:waypoint x="1750" y="70" />
+        <di:waypoint x="1825" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_19_di" bpmnElement="Flux_19">
+        <di:waypoint x="1925" y="70" />
+        <di:waypoint x="2007" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_20_di" bpmnElement="Flux_20">
+        <di:waypoint x="2200" y="70" />
+        <di:waypoint x="2275" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_21_di" bpmnElement="Flux_21">
+        <di:waypoint x="2375" y="70" />
+        <di:waypoint x="2457" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_12_di" bpmnElement="Flux_12">
+        <di:waypoint x="1325" y="210" />
+        <di:waypoint x="1407" y="210" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

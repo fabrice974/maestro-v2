@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_tache-metier" targetNamespace="http://maestro.poc/bpmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="tache-metier" name="Tâche métier garantie" isExecutable="true">
+    <bpmn:documentation>La tâche est réalisée dans l'application métier ; le backbone garantit qu'elle est complétée par la bonne personne, avec les bonnes pièces, dans les délais (escalade sinon). Chaque refus de sécurité ou de validation est visible ici.</bpmn:documentation>
+    <bpmn:startEvent id="debut" name="Tâche requise">
+      <bpmn:outgoing>Flux_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="ouvrir" name="Ouvrir la tâche dans l&#39;application">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="tache.ouvrir" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_1</bpmn:incoming>
+      <bpmn:outgoing>Flux_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="fusion" name="">
+      <bpmn:incoming>Flux_2</bpmn:incoming>
+      <bpmn:incoming>Flux_9</bpmn:incoming>
+      <bpmn:incoming>Flux_12</bpmn:incoming>
+      <bpmn:outgoing>Flux_3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:eventBasedGateway id="attente" name="En attente de l’application">
+      <bpmn:incoming>Flux_3</bpmn:incoming>
+      <bpmn:outgoing>Flux_4</bpmn:outgoing>
+      <bpmn:outgoing>Flux_7</bpmn:outgoing>
+      <bpmn:outgoing>Flux_10</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="completee" name="Tâche complétée et validée">
+      <bpmn:incoming>Flux_4</bpmn:incoming>
+      <bpmn:outgoing>Flux_5</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Msg_tache_completee" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="refusee" name="Tentative refusée (sécurité / validation)">
+      <bpmn:incoming>Flux_7</bpmn:incoming>
+      <bpmn:outgoing>Flux_8</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Msg_tache_refusee" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="sla" name="Délai SLA dépassé">
+      <bpmn:incoming>Flux_10</bpmn:incoming>
+      <bpmn:outgoing>Flux_11</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">=delaiSla</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="clore" name="Clore et auditer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="tache.clore" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_5</bpmn:incoming>
+      <bpmn:outgoing>Flux_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="refus" name="Consigner le refus">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="tache.consigner-refus" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_8</bpmn:incoming>
+      <bpmn:outgoing>Flux_9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="escalade" name="Escalader au superviseur">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="tache.escalader" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flux_11</bpmn:incoming>
+      <bpmn:outgoing>Flux_12</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="fin" name="Tâche terminée">
+      <bpmn:incoming>Flux_6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flux_1" sourceRef="debut" targetRef="ouvrir" />
+    <bpmn:sequenceFlow id="Flux_2" sourceRef="ouvrir" targetRef="fusion" />
+    <bpmn:sequenceFlow id="Flux_3" sourceRef="fusion" targetRef="attente" />
+    <bpmn:sequenceFlow id="Flux_4" sourceRef="attente" targetRef="completee" />
+    <bpmn:sequenceFlow id="Flux_5" sourceRef="completee" targetRef="clore" />
+    <bpmn:sequenceFlow id="Flux_6" sourceRef="clore" targetRef="fin" />
+    <bpmn:sequenceFlow id="Flux_7" sourceRef="attente" targetRef="refusee" />
+    <bpmn:sequenceFlow id="Flux_8" sourceRef="refusee" targetRef="refus" />
+    <bpmn:sequenceFlow id="Flux_9" sourceRef="refus" targetRef="fusion" />
+    <bpmn:sequenceFlow id="Flux_10" sourceRef="attente" targetRef="sla" />
+    <bpmn:sequenceFlow id="Flux_11" sourceRef="sla" targetRef="escalade" />
+    <bpmn:sequenceFlow id="Flux_12" sourceRef="escalade" targetRef="fusion" />
+  </bpmn:process>
+  <bpmn:message id="Msg_tache_completee" name="tache.completee">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=tacheId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmn:message id="Msg_tache_refusee" name="tache.refusee">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=tacheId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_tache-metier">
+    <bpmndi:BPMNPlane id="BPMNPlane_tache-metier" bpmnElement="tache-metier">
+      <bpmndi:BPMNShape id="debut_di" bpmnElement="debut">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ouvrir_di" bpmnElement="ouvrir">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fusion_di" bpmnElement="fusion" isMarkerVisible="true">
+        <dc:Bounds x="350" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="attente_di" bpmnElement="attente">
+        <dc:Bounds x="500" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="completee_di" bpmnElement="completee">
+        <dc:Bounds x="657" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="clore_di" bpmnElement="clore">
+        <dc:Bounds x="775" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fin_di" bpmnElement="fin">
+        <dc:Bounds x="957" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="refusee_di" bpmnElement="refusee">
+        <dc:Bounds x="657" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="refus_di" bpmnElement="refus">
+        <dc:Bounds x="775" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sla_di" bpmnElement="sla">
+        <dc:Bounds x="657" y="332" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="escalade_di" bpmnElement="escalade">
+        <dc:Bounds x="775" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flux_1_di" bpmnElement="Flux_1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_2_di" bpmnElement="Flux_2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="350" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_3_di" bpmnElement="Flux_3">
+        <di:waypoint x="400" y="70" />
+        <di:waypoint x="500" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_4_di" bpmnElement="Flux_4">
+        <di:waypoint x="550" y="70" />
+        <di:waypoint x="657" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_7_di" bpmnElement="Flux_7">
+        <di:waypoint x="525" y="95" />
+        <di:waypoint x="525" y="210" />
+        <di:waypoint x="657" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_10_di" bpmnElement="Flux_10">
+        <di:waypoint x="525" y="95" />
+        <di:waypoint x="525" y="350" />
+        <di:waypoint x="657" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_5_di" bpmnElement="Flux_5">
+        <di:waypoint x="693" y="70" />
+        <di:waypoint x="775" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_6_di" bpmnElement="Flux_6">
+        <di:waypoint x="875" y="70" />
+        <di:waypoint x="957" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_8_di" bpmnElement="Flux_8">
+        <di:waypoint x="693" y="210" />
+        <di:waypoint x="775" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_9_di" bpmnElement="Flux_9">
+        <di:waypoint x="825" y="250" />
+        <di:waypoint x="825" y="280" />
+        <di:waypoint x="375" y="280" />
+        <di:waypoint x="375" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_11_di" bpmnElement="Flux_11">
+        <di:waypoint x="693" y="350" />
+        <di:waypoint x="775" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flux_12_di" bpmnElement="Flux_12">
+        <di:waypoint x="825" y="390" />
+        <di:waypoint x="825" y="420" />
+        <di:waypoint x="375" y="420" />
+        <di:waypoint x="375" y="95" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

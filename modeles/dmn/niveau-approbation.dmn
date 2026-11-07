@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_niveau-approbation" name="Instance d'approbation" namespace="http://maestro.poc/dmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="niveau-approbation" name="Instance d'approbation">
+    <decisionTable id="Table_niveau_approbation" hitPolicy="FIRST">
+      <input id="Input_1" label="Montant soumis ($)"><inputExpression id="InputExpression_1" typeRef="number"><text>montantDecision</text></inputExpression></input>
+      <output id="Output_1" label="Instance (rôle)" name="instanceApprobation" typeRef="string" />
+      <rule id="Rule_1"><description>Seuil du comité du conseil</description><inputEntry id="In_1_1"><text>&gt; 100000000</text></inputEntry><outputEntry id="Out_1_1"><text>&quot;comite-conseil&quot;</text></outputEntry></rule>
+      <rule id="Rule_2"><inputEntry id="In_2_1"><text>-</text></inputEntry><outputEntry id="Out_2_1"><text>&quot;comite-investissement&quot;</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="Diag_niveau_approbation">
+      <dmndi:DMNShape id="Shape_niveau_approbation" dmnElementRef="niveau-approbation">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

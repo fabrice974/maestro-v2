@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Defs_alerte-covenants" name="Statut des clauses financières" namespace="http://maestro.poc/dmn" exporter="maestro-generateur" exporterVersion="1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <decision id="alerte-covenants" name="Statut des clauses financières">
+    <decisionTable id="Table_alerte_covenants" hitPolicy="FIRST">
+      <input id="Input_1" label="Dette nette / BAIIA"><inputExpression id="InputExpression_1" typeRef="number"><text>ratioLevier</text></inputExpression></input>
+      <input id="Input_2" label="Couverture du service de la dette"><inputExpression id="InputExpression_2" typeRef="number"><text>ratioCouverture</text></inputExpression></input>
+      <output id="Output_1" label="Statut" name="statut" typeRef="string" />
+      <rule id="Rule_1"><inputEntry id="In_1_1"><text>&lt;= 4.0</text></inputEntry><inputEntry id="In_1_2"><text>&gt;= 1.5</text></inputEntry><outputEntry id="Out_1_1"><text>&quot;conforme&quot;</text></outputEntry></rule>
+      <rule id="Rule_2"><description>Dépassement de 10 % au plus</description><inputEntry id="In_2_1"><text>&lt;= 4.4</text></inputEntry><inputEntry id="In_2_2"><text>&gt;= 1.35</text></inputEntry><outputEntry id="Out_2_1"><text>&quot;surveillance&quot;</text></outputEntry></rule>
+      <rule id="Rule_3"><inputEntry id="In_3_1"><text>-</text></inputEntry><inputEntry id="In_3_2"><text>-</text></inputEntry><outputEntry id="Out_3_1"><text>&quot;bris&quot;</text></outputEntry></rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="Diag_alerte_covenants">
+      <dmndi:DMNShape id="Shape_alerte_covenants" dmnElementRef="alerte-covenants">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

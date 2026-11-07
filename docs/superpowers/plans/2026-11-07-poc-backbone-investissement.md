@@ -24,7 +24,7 @@ Core + NSwag, Microsoft Graph (jeton Azure CLI pour la PoC).
 - Aucun contenu de document dans une variable de processus : seulement `{ id, nom, url, sha256 }`.
 - Clé de corrélation métier `dossierId` au format `INV-AAAA-NNNN` ; tâches corrélées par `tacheId`.
 - Toute écriture SharePoint reste sous `SHAREPOINT_ROOT_FOLDER` (`POC-Maestro-Camunda`) ; tout autre chemin est refusé.
-- Business rule tasks en liaison `latest`. Minuterie du suivi : variable `cycleSuivi` (défaut `R/P1M`, démo `DEMO_CYCLE_SUIVI`).
+- Business rule tasks en liaison `latest`. Minuterie du suivi : variable `delaiSuivi` (défaut `P1M`, démo `DEMO_DELAI_SUIVI`).
 - Ports : passerelle 4000 ; deal-flow 4101, revue-diligente 4102, déboursé (.NET) 4103, suivi-periodique 4104, desinvestissement 4105.
 - Secrets uniquement dans `.env` (ignoré) ; `.env.example` documente chaque variable.
 
@@ -131,7 +131,7 @@ Contrôles initiaux : 1 approbateur ; conformité requise si montant > 50 000 00
 
 Covenants : dette/BAIIA ≤ 4,0 et couverture ≥ 1,5 → conforme ; dépassement ≤ 10 % → surveillance ; sinon bris. Événements : `demande-tirage`, `remboursement-complet`, `decision-desinvestir`.
 
-- [ ] Bot de bout en bout (`--jusqua fin`) avec `DEMO_CYCLE_SUIVI=R3/PT1M` → dossier clôturé ; commit.
+- [ ] Bot de bout en bout (`--jusqua fin`) avec `DEMO_DELAI_SUIVI=PT1M` → dossier clôturé ; commit.
 
 ### Task 10 : gouvernance visible — cockpit, impact, scénarios, playbooks
 
