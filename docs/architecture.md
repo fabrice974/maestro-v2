@@ -5,28 +5,27 @@ Statut : **implémentée dans la PoC** (2026-11-07). La conception et ses justif
 
 ## Vue d'ensemble
 
-```
-┌──────────────────────────── Camunda 8 SaaS (cluster dev-cl) ────────────────────────────┐
-│ backbone ─► deal-flow ─► revue-diligente        tache-metier (patron réutilisé partout) │
-│         ─► debourse (premier déboursé)          DMN : admissibilite-mandat,             │
-│         ─► suivi-periodique ⟲ (+ tirages ─► debourse)  chantiers-revue-diligente,       │
-│         ─► desinvestissement                    niveau-approbation, controles-debourse, │
-│                                                 alerte-covenants                        │
-└───────────────▲ messages (tache.completee / tache.refusee / événements métier) ─────────┘
-                │                               │ jobs (tache.*, dossier.phase, regle.consigner,
-                │                               ▼      debourse.executer-paiement)
-┌──────────────────────────── Passerelle (passerelle/, TypeScript) ───────────────────────┐
-│ moteur.ts (SEUL import du SDK Camunda) · services.ts (logique) · app.ts (API REST)      │
-│ registre SQLite (dossiers, tâches, documents, événements) · audit chaîné (SHA-256)      │
-│ gouvernance : config/taches.yaml · organisation.yaml · securite.yaml (rechargés à chaud)│
-│ documents : SharePoint (Graph) confiné à POC-Maestro-Camunda/ · cockpit (/cockpit/)     │
-└───────────────▲ REST (contrats/openapi.yaml) ───┬ webhooks « tâche ouverte » ───────────┘
-                │                                 ▼
-  dépôts voisins (ecosysteme.yaml) :
-  maestro-app-deal-flow · -revue-diligente · -suivi-periodique · -desinvestissement (TS, @maestro/sdk)
-  maestro-app-debourse (.NET 10, client C# généré par NSwag depuis sa copie du contrat)
-  maestro-sdk-ts : client TS du contrat + kit d'application, versionné par étiquette git
-```
+![Écosystème Maestro : Camunda 8 SaaS, passerelle, dépôts voisins et outillage](architecture-ecosysteme.svg)
+
+*Cliquer sur l'image pour l'agrandir. Le schéma suit le thème clair ou sombre de GitHub.*
+
+Comment lire le schéma, de haut en bas :
+
+1. **Camunda 8 SaaS** exécute `backbone.bpmn`, qui appelle les cinq sous-processus. Chaque étape
+   humaine passe par le patron `tache-metier.bpmn`. Les décisions viennent des cinq tables DMN.
+2. **Les échanges avec Camunda passent tous par `moteur.ts`.** La passerelle active les jobs en
+   mode pull, publie les messages corrélés (sur `tacheId` ou sur `dossierId`) et déploie les modèles.
+   La sentinelle redéploie les modèles qui manqueraient.
+3. **La passerelle** fait tourner la même logique (`services.ts`) pour les workers et pour l'API.
+   Elle s'appuie sur la gouvernance YAML, le registre, l'audit chaîné et le dépôt de documents
+   SharePoint.
+4. **Les applications** des dépôts voisins ne connaissent que le contrat REST. Elles reçoivent
+   un webhook à l'ouverture d'une tâche. Les quatre applications TS passent par le SDK ; l'application
+   .NET a son propre client généré.
+
+Les couleurs relient chaque application à son sous-processus. On retrouve les mêmes couleurs dans
+la vue métier, [`presentation-metier.html`](presentation-metier.html) (le parcours d'un dossier,
+les rôles et les règles d'affaires, pour un public métier).
 
 ## Décisions structurantes
 

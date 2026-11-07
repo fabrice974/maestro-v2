@@ -15,6 +15,14 @@ Camunda 8 SaaS (BPMN + DMN) ◄──► Passerelle TS (seul client Camunda) ◄
                                    · registre des tâches · sécurité · audit chaîné · SharePoint
 ```
 
+Deux schémas détaillent l'écosystème :
+
+- **vue métier** : [`docs/presentation-metier.html`](docs/presentation-metier.html), le parcours d'un
+  dossier, avec les rôles, les règles d'affaires et ce que le backbone garantit à chaque étape (à
+  ouvrir dans un navigateur) ;
+- **vue technique** : [`docs/architecture.md`](docs/architecture.md), avec le schéma
+  [`docs/architecture-ecosysteme.svg`](docs/architecture-ecosysteme.svg).
+
 ## Les dépôts de l'écosystème
 
 Ce dépôt est le **backbone** : passerelle, modèles BPMN/DMN, gouvernance, contrat, outils et
