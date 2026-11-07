@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
@@ -70,6 +71,10 @@ export function creerApp(s: Services, opts: OptionsApp = {}) {
   });
 
   app.get('/sante', async () => ({ statut: 'ok', documents: s.depot.mode }));
+  // Contrat publié par le backbone : les dépôts d'applications peuvent le récupérer et générer leur client.
+  app.get('/contrat/openapi.yaml', async (_req, rep) =>
+    rep.type('application/yaml').send(readFileSync(join(RACINE, 'contrats', 'openapi.yaml'), 'utf8')),
+  );
   app.get('/', async (_req, rep) => rep.redirect('/cockpit/'));
 
   // ───── Données du cockpit (lecture seule, démo locale) ─────

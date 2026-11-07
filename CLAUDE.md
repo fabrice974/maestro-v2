@@ -9,17 +9,22 @@ d'investissement de bout en bout. Des **applications de sous-processus** simulé
 réalisent les étapes sans rien connaître de Camunda : elles ne parlent qu'à une **passerelle**
 TypeScript via `contrats/openapi.yaml`. Langue du projet (code métier, UI, docs, commits) : français.
 
+**Multi-dépôts** : ce dépôt est le backbone. Les applications et le SDK TS vivent dans des dépôts
+**voisins** (`../maestro-sdk-ts`, `../maestro-app-*`), listés dans `ecosysteme.yaml`. Une modification
+d'application se fait (et se commite, avec sa propre PR) dans son dépôt, jamais ici.
+
 ## Commandes
 
 ```bash
 npm install
-npm test                                  # vitest (passerelle + kit-app)
+npm test                                  # vitest (passerelle + outils)
 npx vitest run passerelle/test/api.test.ts -t "S2"   # un seul test
 npm run typecheck                         # tsc --noEmit sur tout le monorepo
 npm run deployer [-- modeles/dmn/x.dmn]   # déploie modeles/** (ou les fichiers donnés) sur le cluster du .env
 npm run passerelle                        # passerelle seule (port 4000, cockpit /cockpit/)
-npm run demarrer -- --dotnet              # passerelle + 4 apps TS (4101,4102,4104,4105) + app .NET (4103)
-dotnet build apps/debourse-dotnet         # app .NET
+npm run ecosysteme -- statut|cloner|installer   # dépôts voisins (ecosysteme.yaml)
+npm run ecosysteme -- demarrer            # passerelle + 4 apps TS (4101,4102,4104,4105) + app .NET (4103), depuis leurs dépôts
+npm run ecosysteme -- contrat             # propage contrats/openapi.yaml au SDK et à l'app .NET + régénère leurs clients
 npm run bot -- --classe infrastructure --montant 120000000 --sortie desinvestir   # parcours e2e réel sur le cluster
 npm run test:ui                           # écrans des apps TS (passerelle + apps démarrées)
 npx tsx outils/src/test-dotnet.ts INV-…   # écrans de l'app .NET (dossier arrivé au déboursé : bot --sauf debourse --jusqua post)
@@ -27,7 +32,6 @@ npm run scenario -- liste | r1 | r1 --annuler     # scénarios de changement R/O
 npm run impact -- <rôle|typeTache|règle|personne|équipe>
 npm run incidents                         # incidents Camunda actifs (premier réflexe si un dossier n'avance plus)
 npm run audit:verifier | audit:exporter
-npm run generer:client                    # après toute modification de contrats/openapi.yaml (client TS)
 ```
 
 Démo accélérée : `DEMO_DELAI_SUIVI=PT1M DEMO_FACTEUR_SLA=0.01` (env ou `.env`). Le `.env` (jamais
@@ -49,9 +53,11 @@ commité) contient le client API Camunda et la config SharePoint ; modèle : `.e
   les fichiers vont dans SharePoint (`passerelle/src/documents/`), confinés au dossier
   `SHAREPOINT_ROOT_FOLDER`. Mode `local` disponible.
 - Registre + audit : SQLite (`donnees/passerelle.sqlite`, ignoré par git). Audit en ajout seul, chaîné SHA-256.
-- Apps TS : `packages/kit-app` fournit boîte de tâches, formulaire généré depuis la définition, dépôt,
-  webhook ; une app = identité + écrans propres. App .NET : client NSwag commité
-  (`apps/debourse-dotnet/Passerelle/PasserelleClient.g.cs`, régénération : voir son README).
+- Apps TS (dépôts voisins) : `@maestro/sdk/kit` (dépôt `maestro-sdk-ts`, épinglé par étiquette git)
+  fournit boîte de tâches, formulaire généré depuis la définition, dépôt, webhook ; une app = identité
+  + écrans propres. App .NET (`maestro-app-debourse`) : copie figée du contrat + client NSwag commité.
+- `packages/commun/src/simulation.ts` est dupliqué dans le SDK (`src/simulation.ts`) : le robot du
+  backbone et le bouton « Pré-remplir » des apps l'utilisent chacun de leur côté.
 
 ## Pièges connus
 
@@ -84,7 +90,9 @@ commité) contient le client API Camunda et la config SharePoint ; modèle : `.e
 
 ## Invariants à ne pas casser
 
-- Aucune app sous `apps/` ne dépend d'un paquet Camunda ni ne manipule une clé d'instance.
+- Aucun dépôt d'application ne dépend d'un paquet Camunda ni ne manipule une clé d'instance.
+- Un changement de contrat incompatible exige une nouvelle version majeure du SDK : les apps épinglées
+  sur l'ancienne étiquette doivent continuer de fonctionner tant qu'elles n'ont pas migré.
 - Aucun nom de personne/groupe dans un BPMN/DMN ; aucune règle d'affaires codée dans une app.
 - Aucun contenu de document dans une variable de processus.
 - Toute écriture SharePoint reste sous le dossier racine de la PoC (site SDAPS TI, dossier

@@ -77,6 +77,12 @@ describe('API de la passerelle', () => {
     expect(moteur.demarrages[0]).toMatchObject({ processus: 'backbone', businessId: dossierId, variables: { dossierId, delaiSuivi: 'P1M' } });
   });
 
+  it('publie son contrat OpenAPI sans authentification', async () => {
+    const r = await app.inject({ method: 'GET', url: '/contrat/openapi.yaml' });
+    expect(r.statusCode).toBe(200);
+    expect(r.body).toContain('openapi: 3.0.3');
+  });
+
   it('refuse un jeton inconnu (401) et une application sans droit de création (403)', async () => {
     expect((await app.inject({ method: 'GET', url: '/dossiers' })).statusCode).toBe(401);
     const r = await app.inject({

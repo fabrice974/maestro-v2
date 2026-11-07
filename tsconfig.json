@@ -11,6 +11,6 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["passerelle/**/*.ts", "packages/**/*.ts", "apps/**/*.ts", "outils/**/*.ts"],
-  "exclude": ["**/node_modules", "apps/debourse-dotnet"]
+  "include": ["passerelle/**/*.ts", "packages/**/*.ts", "outils/**/*.ts"],
+  "exclude": ["**/node_modules"]
 }
