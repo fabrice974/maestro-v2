@@ -23,6 +23,10 @@ export interface Moteur {
   publier(nom: string, cleCorrelation: string, variables: Record<string, unknown>, messageId: string): Promise<void>;
   ecouter(type: string, gestionnaire: GestionnaireJob): void;
   arreter(): Promise<void>;
+  /** Identifiants des processus et décisions présents sur le cluster (toutes versions). */
+  definitionsDeployees?(): Promise<{ processus: Set<string>; decisions: Set<string> }>;
+  /** Déploie des fichiers BPMN/DMN ; renvoie « id vN » pour chaque ressource. */
+  deployer?(fichiers: string[]): Promise<string[]>;
 }
 
 export class MoteurCamunda implements Moteur {
@@ -69,6 +73,24 @@ export class MoteurCamunda implements Moteur {
       },
     });
     this.workers.push(w);
+  }
+
+  async definitionsDeployees() {
+    const opts = { consistency: { waitUpToMs: 0 } } as never;
+    const p = (await this.client.searchProcessDefinitions({ page: { limit: 500 } } as never, opts)) as { items: { processDefinitionId: string }[] };
+    const d = (await this.client.searchDecisionDefinitions({ page: { limit: 500 } } as never, opts)) as { items: { decisionDefinitionId: string }[] };
+    return {
+      processus: new Set(p.items.map((x) => String(x.processDefinitionId))),
+      decisions: new Set(d.items.map((x) => String(x.decisionDefinitionId))),
+    };
+  }
+
+  async deployer(fichiers: string[]) {
+    const r = await this.client.deployResourcesFromFiles(fichiers);
+    return [
+      ...(r.processes ?? []).map((x) => `${x.processDefinitionId} v${x.processDefinitionVersion}`),
+      ...(r.decisions ?? []).map((x) => `${x.decisionDefinitionId} v${x.version}`),
+    ];
   }
 
   async arreter() {

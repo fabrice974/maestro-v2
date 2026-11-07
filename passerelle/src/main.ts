@@ -58,6 +58,20 @@ watch(dirConfig, () => {
   }, 400);
 });
 
+// Sentinelle : au démarrage puis toutes les 10 minutes, redéploie les modèles absents du cluster
+// (un cluster d'essai efface ses données à chaque mise en pause automatique).
+const { verifierEtRedeployer } = await import('./sentinelle.ts');
+const sentinelle = async () => {
+  try {
+    const deployes = await verifierEtRedeployer(moteur, services.journal, join(RACINE, 'modeles'));
+    if (deployes.length) console.log(`Sentinelle : modèles absents du cluster redéployés → ${deployes.join(', ')}`);
+  } catch (e) {
+    console.error('Sentinelle : vérification du cluster impossible (cluster en pause ?) —', (e as Error).message);
+  }
+};
+await sentinelle();
+setInterval(sentinelle, Number(process.env.SENTINELLE_INTERVALLE_MS ?? 600_000)).unref();
+
 const types = enregistrerWorkers(moteur, services);
 const app = creerApp(services, { operateUrl: process.env.CAMUNDA_OPERATE_URL });
 const port = Number(process.env.PASSERELLE_PORT ?? 4000);

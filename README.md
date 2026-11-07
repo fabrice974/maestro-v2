@@ -113,9 +113,15 @@ conformité, désinvestissement.
 
 ## Après une mise en pause du cluster d'essai
 
-Un cluster d'essai inactif est mis en pause automatiquement par Camunda. Le 2026-11-07, au réveil
-de `dev-cl`, toutes ses données avaient été effacées (processus, décisions, instances). Avant chaque
-démo :
+Un cluster d'essai est mis en pause automatiquement par Camunda, et son disque est **effacé** à
+chaque pause (documenté : [SaaS clusters](https://docs.camunda.io/docs/components/saas/clusters/)).
+L'étiquette `dev` déclenche la pause 8 h après la création ou le réveil, même en pleine activité ;
+`dev-cl` porte donc l'étiquette `test` depuis le 2026-11-07, ce qui laisse la seule règle des 48 h
+d'inactivité. Les clients API et les secrets survivent ; les processus et les instances, non.
+
+La passerelle s'en protège : au démarrage puis toutes les 10 minutes, elle redéploie les modèles
+absents du cluster (audit `modeles.redeployes`). Les instances en cours, elles, sont perdues. Pour
+vérifier à la main :
 
 ```bash
 npm run verifier:cluster    # ✔/✖ pour chaque modèle attendu + instances en cours
