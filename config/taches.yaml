@@ -55,6 +55,18 @@ dealflow.structuration:
   documents:
     - { type: feuille-modalites, libelle: Feuille de modalités négociée, obligatoire: true }
 
+# Utilisée seulement par la version 2 du deal flow (scénario R3 : revue conformité avant l'approbation finale).
+dealflow.revue-conformite:
+  titre: Revue de conformité avant approbation finale
+  phase: deal-flow
+  roleRequis: conformite
+  delaiSla: P3D
+  champs:
+    - { nom: listesSanctions, libelle: Vérification des listes de sanctions effectuée, type: booleen, obligatoire: true }
+    - { nom: commentaire, libelle: Commentaire, type: texte, obligatoire: false }
+  decision: [conforme, non-conforme]
+  documents: []
+
 dealflow.approbation-finale:
   titre: Approbation finale
   phase: deal-flow

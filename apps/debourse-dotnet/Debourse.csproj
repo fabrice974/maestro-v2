@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Application Déboursé (.NET) : branchée sur le backbone uniquement via le contrat
+    ../../contrats/openapi.yaml. Le client C# (Passerelle/PasserelleClient.g.cs) est généré par NSwag
+    (voir nswag.json et README.md) puis commité : la compilation ne dépend d'aucun paquet externe,
+    ni NSwag, ni Camunda/Zeebe.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Debourse</RootNamespace>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Le contrat est affiché dans l'explorateur de solution, sans être compilé. -->
+    <None Include="..\..\contrats\openapi.yaml" Link="Contrat\openapi.yaml" />
+  </ItemGroup>
+
+</Project>

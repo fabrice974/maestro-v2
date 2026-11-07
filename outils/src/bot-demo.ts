@@ -22,8 +22,11 @@ const { values: a } = parseArgs({
     mois: { type: 'string', default: '2' },
     dossier: { type: 'string' },
     delai: { type: 'string', default: '900' },
+    /** Applications que le robot laisse aux humains (ex. --sauf debourse), séparées par des virgules. */
+    sauf: { type: 'string', default: '' },
   },
 });
+const SAUF = new Set(a.sauf!.split(',').filter(Boolean));
 
 const URL_PASSERELLE = process.env.PASSERELLE_URL ?? 'http://localhost:4000';
 const APPS: Record<string, string> = {
@@ -108,7 +111,7 @@ async function main() {
   let evenementEnvoye = false;
   while (Date.now() < limite) {
     let travail = false;
-    for (const app of Object.keys(APPS)) {
+    for (const app of Object.keys(APPS).filter((x) => !SAUF.has(x))) {
       const { corps: taches } = await api(app, `/taches?statut=ouverte&dossierId=${dossierId}`);
       for (const t of taches) {
         await traiterTache(app, t.tacheId);

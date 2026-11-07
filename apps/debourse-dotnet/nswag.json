@@ -1,0 +1,40 @@
+{
+  "runtime": "Net100",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../../contrats/openapi.yaml",
+      "output": null
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "className": "PasserelleClient",
+      "namespace": "Debourse.Passerelle",
+      "operationGenerationMode": "SingleClientFromOperationId",
+      "generateClientInterfaces": true,
+      "generateClientClasses": true,
+      "generateExceptionClasses": true,
+      "exceptionClass": "ApiException",
+      "injectHttpClient": true,
+      "disposeHttpClient": false,
+      "useBaseUrl": false,
+      "generateBaseUrlProperty": false,
+      "generateOptionalParameters": true,
+      "generateOptionalPropertiesAsNullable": true,
+      "generateNullableReferenceTypes": true,
+      "jsonLibrary": "SystemTextJson",
+      "generateDtoTypes": true,
+      "generateDataAnnotations": false,
+      "classStyle": "Poco",
+      "arrayType": "System.Collections.Generic.ICollection",
+      "arrayInstanceType": "System.Collections.ObjectModel.Collection",
+      "dictionaryType": "System.Collections.Generic.IDictionary",
+      "dictionaryInstanceType": "System.Collections.Generic.Dictionary",
+      "dateTimeType": "System.DateTimeOffset",
+      "generateJsonMethods": false,
+      "enforceFlagEnums": false,
+      "output": "Passerelle/PasserelleClient.g.cs"
+    }
+  }
+}

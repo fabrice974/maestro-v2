@@ -36,9 +36,10 @@ export function revueDiligente(): Processus {
     .chaine('debut', 'regle-chantiers', 'chantier', 'synthese', 'fin');
 }
 
-export function dealFlow(): Processus {
+/** @param revueConformite version 2 (scénario R3) : revue de conformité entre l'instance d'approbation et l'approbation finale. */
+export function dealFlow(revueConformite = false): Processus {
   const abandon = (decision: string) => `${decision}`;
-  return new Processus('deal-flow', 'Deal flow', "Du stade « à venir » jusqu'au stade « assigné ».")
+  const p = new Processus('deal-flow', 'Deal flow', "Du stade « à venir » jusqu'au stade « assigné ».")
     .debut('debut', 'Occasion à venir')
     .tache('qualifier', "Qualifier l'occasion", 'dealflow.qualifier-occasion', 'qualification')
     .regle('regle-admissibilite', 'Filtrage : admissibilité au mandat', 'admissibilite-mandat', 'admissibilite')
@@ -75,7 +76,18 @@ export function dealFlow(): Processus {
     .relier('revue', 'gw-revue')
     .relier('gw-revue', 'structuration', { nom: 'favorable', condition: 'synthese.decision != "defavorable"' })
     .relier('gw-revue', 'fusion-abandon', { nom: 'défavorable', condition: 'synthese.decision = "defavorable"' })
-    .chaine('structuration', 'regle-approbation', 'finale', 'gw-finale')
+    .relier('structuration', 'regle-approbation');
+  if (revueConformite) {
+    p.tache('revue-conformite', 'Revue de conformité', 'dealflow.revue-conformite', 'revueConformite')
+      .ou('gw-conformite', 'Conforme ?')
+      .chaine('regle-approbation', 'revue-conformite', 'gw-conformite')
+      .relier('gw-conformite', 'finale', { nom: 'conforme', condition: 'revueConformite.decision = "conforme"' })
+      .relier('gw-conformite', 'fusion-abandon', { nom: 'non conforme', condition: 'revueConformite.decision != "conforme"' });
+  } else {
+    p.relier('regle-approbation', 'finale');
+  }
+  return p
+    .relier('finale', 'gw-finale')
     .relier('gw-finale', 'juridique', { nom: 'approuvé', condition: 'approbationFinale.decision = "approuve"' })
     .relier('gw-finale', 'fusion-abandon', { nom: 'refusé', condition: 'approbationFinale.decision != "approuve"' })
     .chaine('juridique', 'assigner', 'marquer-assigne', 'fin-assigne')

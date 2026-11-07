@@ -15,14 +15,15 @@ const NouveauDossierSchema = z.object({
   secteur: z.string().min(1),
 });
 
+// Les clients générés (ex. NSwag/C#) envoient null pour les propriétés absentes : accepté.
 const CompletionSchema = z.object({
-  champs: z.record(z.string(), z.unknown()).default({}),
-  decision: z.string().optional(),
+  champs: z.record(z.string(), z.unknown()).nullish().transform((v) => v ?? {}),
+  decision: z.string().nullish().transform((v) => v ?? undefined),
 });
 
 const EvenementSchema = z.object({
   evenementId: z.string().min(1),
-  donnees: z.record(z.string(), z.unknown()).default({}),
+  donnees: z.record(z.string(), z.unknown()).nullish().transform((v) => v ?? {}),
 });
 
 declare module 'fastify' {
@@ -41,12 +42,11 @@ export function creerApp(s: Services, opts: OptionsApp = {}) {
   app.register(multipart, { limits: { fileSize: 4 * 1024 * 1024 } });
   app.register(fastifyStatic, { root: join(RACINE, 'passerelle', 'public'), prefix: '/cockpit/' });
 
-  const jetons = new Map([...s.g.applications.values()].map((a) => [a.jeton, a.id]));
-
   /** Authentifie l'application (jeton Bearer) et lit l'utilisateur simulé (X-Utilisateur). */
   async function authentifier(req: FastifyRequest, rep: FastifyReply) {
     const jeton = (req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
-    const appId = jetons.get(jeton);
+    // Relu à chaque requête : une révocation dans config/securite.yaml prend effet immédiatement.
+    const appId = [...s.g.applications.values()].find((a) => a.jeton === jeton)?.id;
     if (!appId) {
       s.journal.ajouter({ acteur: 'inconnu', application: 'inconnue', action: 'authentification.refusee', details: { url: req.url } });
       return rep.code(401).send({ code: 'NON_AUTHENTIFIE', message: 'Jeton d’application invalide ou absent' });

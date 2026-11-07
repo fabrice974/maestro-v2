@@ -1,4 +1,5 @@
-import { mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, readdirSync, readFileSync, watch } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { chargerEnv, RACINE } from '@maestro/commun';
@@ -30,6 +31,31 @@ const services = new Services(gouvernance, new Registre(db), new Journal(db), cr
       signal: AbortSignal.timeout(2_000),
     });
   },
+});
+
+// Rechargement à chaud de la gouvernance : un changement organisationnel ou de sécurité prend effet
+// sans redéploiement ni redémarrage ; chaque version de configuration est auditée (empreintes).
+const dirConfig = join(RACINE, 'config');
+const empreintesConfig = () =>
+  Object.fromEntries(
+    readdirSync(dirConfig)
+      .filter((f) => f.endsWith('.yaml'))
+      .map((f) => [f, createHash('sha256').update(readFileSync(join(dirConfig, f))).digest('hex').slice(0, 16)]),
+  );
+services.journal.ajouter({ acteur: 'passerelle', application: 'passerelle', action: 'gouvernance.chargee', details: empreintesConfig() });
+let minuterie: NodeJS.Timeout | undefined;
+watch(dirConfig, () => {
+  clearTimeout(minuterie);
+  minuterie = setTimeout(() => {
+    try {
+      services.g = chargerGouvernance();
+      services.journal.ajouter({ acteur: 'passerelle', application: 'passerelle', action: 'gouvernance.rechargee', details: empreintesConfig() });
+      console.log('Gouvernance rechargée (config/*.yaml).');
+    } catch (e) {
+      services.journal.ajouter({ acteur: 'passerelle', application: 'passerelle', action: 'gouvernance.rejetee', details: { erreur: (e as Error).message } });
+      console.error('Configuration invalide — ancienne version conservée :\n', (e as Error).message);
+    }
+  }, 400);
 });
 
 const types = enregistrerWorkers(moteur, services);

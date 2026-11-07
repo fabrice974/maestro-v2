@@ -135,6 +135,14 @@ describe('API de la passerelle', () => {
     expect(r.json().code).toBe('SEPARATION_TACHES');
   });
 
+  it('accepte decision: null envoyé par un client généré (C#/NSwag)', async () => {
+    const { dossierId } = (await nouveauDossier()).json();
+    const { tacheId } = await s.ouvrirTache(job({ typeTache: 'debourse.preparer-instruction', dossierId }));
+    const r = await app.inject({ method: 'POST', url: `/taches/${tacheId}/completer`, headers: { ...DEBOURSE, 'x-utilisateur': 'hugo' }, payload: { champs: { referencePaiement: 'R' }, decision: null } });
+    expect(r.statusCode).toBe(422);
+    expect(r.json().code).toBe('DONNEES_INVALIDES');
+  });
+
   it('date invalide → 422 détaillé, jamais 500, et refus visible', async () => {
     const { dossierId } = (await nouveauDossier()).json();
     const { tacheId } = await s.ouvrirTache(job({ typeTache: 'debourse.kyc', dossierId }));

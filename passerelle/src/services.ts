@@ -45,7 +45,8 @@ export interface NouveauDossier {
 /** Logique du backbone partagée par l'API REST et les workers Camunda. */
 export class Services {
   constructor(
-    readonly g: Gouvernance,
+    /** Remplacée à chaud quand config/*.yaml change (voir rechargerGouvernance dans main.ts). */
+    public g: Gouvernance,
     readonly registre: Registre,
     readonly journal: Journal,
     readonly depot: DepotDocuments,

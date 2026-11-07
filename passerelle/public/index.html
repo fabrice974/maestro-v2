@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cockpit du backbone</title>
+<style>
+:root{--fond:#f4f5f8;--carte:#fff;--texte:#1b2230;--doux:#5d6778;--bord:#dde2ea;--accent:#243b6b;--pre:#1f5fa8;--post:#b36b00;--ok:#1b7a43;--ko:#b3261e;--alerte:#9a6700}
+@media (prefers-color-scheme:dark){:root{--fond:#12151a;--carte:#1b1f26;--texte:#e7eaf0;--doux:#98a2b3;--bord:#2c323c;--accent:#8fb0ff}}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--fond);color:var(--texte)}
+header{padding:14px 16px;border-bottom:1px solid var(--bord);background:var(--carte);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+h1{font-size:18px;margin:0}h2{font-size:15px;margin:0 0 10px}
+main{max-width:1280px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr))}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:10px;padding:14px;overflow:auto}
+.large{grid-column:1/-1}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid var(--bord);text-align:left;vertical-align:top}th{font-size:12px;color:var(--doux)}
+.pastille{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--bord)}
+.pre{color:var(--pre);border-color:var(--pre)}.post{color:var(--post);border-color:var(--post)}.ok{color:var(--ok)}.ko{color:var(--ko)}.alerte{color:var(--alerte)}
+.frise{display:flex;gap:3px;margin-top:4px}.frise span{flex:1;height:6px;border-radius:3px;background:var(--bord)}.frise span.fait{background:var(--pre)}.frise span.fait.p{background:var(--post)}.frise span.cour{outline:2px solid var(--texte)}
+.doux{color:var(--doux);font-size:12px}a{color:var(--accent)}code{font-size:12px}
+.liens a{margin-left:12px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Cockpit du backbone d'investissement</h1><div class="doux">Vue de gouvernance : ce que le backbone garantit (tâches, délais, refus, audit). Rafraîchi toutes les 3 s.</div></div>
+  <div class="liens"><span id="chaine" class="pastille">Chaîne d'audit…</span><a id="lienSp" target="_blank" rel="noopener">Documents SharePoint</a><a id="lienOperate" target="_blank" rel="noopener">Operate (BPMN)</a></div>
+</header>
+<main>
+  <section class="carte large"><h2>Dossiers</h2><table><thead><tr><th>Dossier</th><th>Classe / montant</th><th>Phase</th><th>Progression (pré → post)</th><th>Tâches</th><th>Documents</th></tr></thead><tbody id="dossiers"></tbody></table></section>
+  <section class="carte"><h2>Tâches ouvertes — complétion garantie par le backbone</h2><table><thead><tr><th>Tâche</th><th>Application / rôle</th><th>Échéance</th><th>Escalades / refus</th></tr></thead><tbody id="taches"></tbody></table></section>
+  <section class="carte"><h2>Piste d'audit (200 dernières entrées)</h2><table><thead><tr><th>#</th><th>Quand</th><th>Qui / app</th><th>Action</th><th>Hash</th></tr></thead><tbody id="audit"></tbody></table></section>
+</main>
+<script>
+const PHASES = ['deal-flow','revue-diligente','debourse','suivi-periodique','desinvestissement','cloture'];
+const LIBELLES = {'deal-flow':'Deal flow','revue-diligente':'Revue diligente','debourse':'Déboursé','suivi-periodique':'Suivi périodique','desinvestissement':'Désinvestissement','cloture':'Clôturé'};
+const e = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const enAlerte = (a) => /refus|refusee|escalad|authentification/.test(a);
+function frise(phase){
+  const i = PHASES.indexOf(phase);
+  return '<div class="frise">' + PHASES.slice(0,5).map((p,j)=>`<span title="${LIBELLES[p]}" class="${j<i||phase==='cloture'?'fait':''} ${j>=3?'p':''} ${j===i?'cour':''}"></span>`).join('') + '</div>';
+}
+async function rafraichir(){
+  let d; try { d = await (await fetch('/cockpit/api/etat')).json(); } catch { return; }
+  const v = d.verification;
+  const c = document.getElementById('chaine');
+  c.textContent = v.valide ? `Chaîne d'audit VALIDE — ${v.entrees} entrées` : `Chaîne ROMPUE à l'entrée ${v.rompueA}`;
+  c.className = 'pastille ' + (v.valide ? 'ok' : 'ko');
+  if (d.documentsRacine) document.getElementById('lienSp').href = d.documentsRacine;
+  const op = document.getElementById('lienOperate'); if (d.operateUrl) op.href = d.operateUrl; else op.style.display='none';
+  document.getElementById('dossiers').innerHTML = d.dossiers.map(x=>{
+    const t = d.taches.filter(t=>t.dossierId===x.dossierId);
+    const ouvertes = t.filter(t=>t.statut==='ouverte').length;
+    const post = ['suivi-periodique','desinvestissement'].includes(x.phase);
+    return `<tr><td><strong>${e(x.dossierId)}</strong><br><span class="doux">${e(x.nom)}</span></td>
+      <td>${e(x.classeActif)}<br><span class="doux">${Number(x.montant).toLocaleString('fr-CA')} $</span></td>
+      <td><span class="pastille ${post?'post':'pre'}">${e(LIBELLES[x.phase]??x.phase)}</span>${x.statut!=='actif'?`<br><span class="doux">${e(x.statut)}</span>`:''}</td>
+      <td>${frise(x.phase)}<span class="doux">${post||x.phase==='cloture'?'post-investissement':'pré-investissement'}</span></td>
+      <td>${t.length-ouvertes} faites / ${ouvertes} ouverte(s)</td>
+      <td>${x.urlDocuments?`<a href="${e(x.urlDocuments)}" target="_blank" rel="noopener">dossier</a>`:''}</td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="doux">Aucun dossier.</td></tr>';
+  const ouvertes = d.taches.filter(t=>t.statut==='ouverte');
+  document.getElementById('taches').innerHTML = ouvertes.map(t=>{
+    const retard = new Date(t.echeance) < new Date();
+    return `<tr><td>${e(t.typeTache)}<br><span class="doux">${e(t.dossierId)}${t.contexte?.chantier?' · '+e(t.contexte.chantier):''}</span></td>
+      <td>${e(t.application)}<br><span class="doux">${e(t.roleRequis)}</span></td>
+      <td class="${retard?'ko':''}">${new Date(t.echeance).toLocaleTimeString('fr-CA')}${retard?'<br>dépassée':''}</td>
+      <td class="${t.escalades||t.refus?'alerte':''}">${t.escalades} / ${t.refus}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="doux">Aucune tâche ouverte.</td></tr>';
+  document.getElementById('audit').innerHTML = d.audit.map(a=>`<tr class="${enAlerte(a.action)?'ko':''}">
+    <td>${a.seq}</td><td class="doux">${new Date(a.horodatage).toLocaleTimeString('fr-CA')}</td>
+    <td>${e(a.acteur)}<br><span class="doux">${e(a.application)}</span></td>
+    <td><strong>${e(a.action)}</strong> <span class="doux">${e(a.dossierId??'')}</span><br><span class="doux">${e(a.details?.typeTache ?? a.details?.regle ?? '')} ${e(a.details?.code ?? (a.details?.valeur!==undefined?JSON.stringify(a.details.valeur):'') ?? '')} ${a.document?'📄 '+e(a.document.nom):''}</span></td>
+    <td><code title="${e(a.hash)}">${e(a.hash.slice(0,10))}</code></td></tr>`).join('');
+}
+rafraichir(); setInterval(rafraichir, 3000);
+</script>
+</body>
+</html>
