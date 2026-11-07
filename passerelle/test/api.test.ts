@@ -184,6 +184,24 @@ describe('API de la passerelle', () => {
     expect((await essai()).statusCode).toBe(200);
   });
 
+  it('backbone inconnu du moteur (cluster effacé) → redéploiement puis démarrage, audité', async () => {
+    let appels = 0;
+    const demarrer = moteur.demarrer.bind(moteur);
+    moteur.demarrer = async (...a) => {
+      if (appels++ === 0) throw new Error("NOT_FOUND [createProcessInstance]: Expected to find process definition with process ID 'backbone'");
+      return demarrer(...a);
+    };
+    let repare = 0;
+    s.options.reparerModeles = async () => {
+      repare++;
+      return ['backbone v1'];
+    };
+    const r = await nouveauDossier();
+    expect(r.statusCode).toBe(201);
+    expect(repare).toBe(1);
+    expect(s.journal.lister().some((e) => e.action === 'modeles.redeployes')).toBe(true);
+  });
+
   it('accepte decision: null envoyé par un client généré (C#/NSwag)', async () => {
     const { dossierId } = (await nouveauDossier()).json();
     const { tacheId } = await s.ouvrirTache(job({ typeTache: 'debourse.preparer-instruction', dossierId }));

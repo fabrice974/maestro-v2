@@ -23,6 +23,10 @@ const moteur = new MoteurCamunda();
 const services = new Services(gouvernance, new Registre(db), new Journal(db), creerDepot(), moteur, {
   facteurSla: Number(process.env.DEMO_FACTEUR_SLA ?? 1),
   delaiSuivi: process.env.DEMO_DELAI_SUIVI ?? 'P1M',
+  reparerModeles: async () => {
+    const { listerModeles } = await import('./sentinelle.ts');
+    return moteur.deployer([...new Set(listerModeles(join(RACINE, 'modeles')).map((m) => m.fichier))]);
+  },
   notifier: async (url, jeton, corps) => {
     await fetch(`${url}/webhooks/taches`, {
       method: 'POST',

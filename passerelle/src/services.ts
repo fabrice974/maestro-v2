@@ -19,6 +19,8 @@ export const DOSSIERS_PHASE: Record<string, string> = {
 export interface Options {
   facteurSla: number;
   delaiSuivi: string;
+  /** Redéploie tous les modèles (déduplication Camunda : un modèle inchangé ne crée pas de version). */
+  reparerModeles?: () => Promise<string[]>;
   /** Notifie l'application propriétaire d'une nouvelle tâche (webhook). */
   notifier?: (appUrl: string, jeton: string, corps: object) => Promise<void>;
 }
@@ -69,7 +71,17 @@ export class Services {
     try {
       ({ url } = await this.depot.creerDossier([dossierId]));
       for (const sous of Object.values(DOSSIERS_PHASE)) await this.depot.creerDossier([dossierId, sous]);
-      ({ cleInstance, version } = await this.moteur.demarrer('backbone', { ...entree, dossierId, delaiSuivi: this.options.delaiSuivi }, dossierId));
+      const variables = { ...entree, dossierId, delaiSuivi: this.options.delaiSuivi };
+      try {
+        ({ cleInstance, version } = await this.moteur.demarrer('backbone', variables, dossierId));
+      } catch (e) {
+        // Le moteur ne connaît plus le processus (cluster d'essai effacé, ressource supprimée) :
+        // redéployer puis réessayer une fois. L'index de recherche peut encore lister un modèle supprimé.
+        if (!/NOT_FOUND/.test((e as Error).message) || !this.options.reparerModeles) throw e;
+        const deployes = await this.options.reparerModeles();
+        this.journal.ajouter({ acteur: 'passerelle', application: 'passerelle', action: 'modeles.redeployes', dossierId, details: { motif: 'backbone introuvable au démarrage', deployes } });
+        ({ cleInstance, version } = await this.moteur.demarrer('backbone', variables, dossierId));
+      }
     } catch (e) {
       this.registre.majDossier(dossierId, { statut: 'abandonne' });
       this.journal.ajouter({ acteur: utilisateur, application, action: 'dossier.echec-creation', dossierId, details: { erreur: (e as Error).message } });
