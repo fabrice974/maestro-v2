@@ -187,7 +187,8 @@ const SCENARIOS: Record<string, Scenario> = {
     titre: 'S1 — L’application Suivi périodique tente de compléter une tâche de déboursé',
     pourquoi: 'Défense contre une application compromise ou mal configurée, même si elle connaît l’identifiant de la tâche.',
     appliquer: async () => {
-      const t = (await etat()).taches.find((x) => x.statut === 'ouverte' && x.application !== 'suivi-periodique');
+      const ouvertes = (await etat()).taches.filter((x) => x.statut === 'ouverte' && x.application !== 'suivi-periodique');
+      const t = ouvertes.find((x) => x.application === 'debourse') ?? ouvertes[0];
       if (!t) return etape('Aucune tâche ouverte d’une autre application : lancez d’abord « npm run bot -- --jusqua assigne ».');
       etape(`cible : ${t.typeTache} (${t.dossierId}), propriété de l’application « ${t.application} »`);
       const r = await api('demo-jeton-suivi-periodique', `/taches/${t.tacheId}/completer`, { method: 'POST', utilisateur: 'kevin', body: JSON.stringify({ decision: 'approuve', champs: {} }) });

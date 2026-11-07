@@ -2,50 +2,79 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## État du projet
+## Projet
 
-Preuve de concept (PoC) au stade du cadrage : aucune application, aucune commande de build ni de test
-pour l'instant. Les choix techniques encore ouverts sont dans `docs/questions-ouvertes.md` ; ne pas
-trancher à la place de l'utilisateur ce qui y figure. Mettre à jour ce fichier (commandes, structure)
-dès que du code arrive.
+PoC : un **backbone Camunda 8 SaaS** orchestre le processus d'investissement d'une caisse
+d'investissement de bout en bout. Des **applications de sous-processus** simulées (4 TypeScript + 1 .NET)
+réalisent les étapes sans rien connaître de Camunda : elles ne parlent qu'à une **passerelle**
+TypeScript via `contrats/openapi.yaml`. Langue du projet (code métier, UI, docs, commits) : français.
 
-## Objectif
+## Commandes
 
-Un **backbone Camunda** orchestre le processus d'investissement de bout en bout. Les étapes concrètes
-sont réalisées par des **applications de sous-processus** distinctes, qui doivent rester découplées du
-moteur : elles ne connaissent ni le BPMN, ni Zeebe, ni les identifiants internes de Camunda.
-L'utilisateur dispose d'un compte de test Camunda (SaaS).
+```bash
+npm install
+npm test                                  # vitest (passerelle + kit-app)
+npx vitest run passerelle/test/api.test.ts -t "S2"   # un seul test
+npm run typecheck                         # tsc --noEmit sur tout le monorepo
+npm run deployer [-- modeles/dmn/x.dmn]   # déploie modeles/** (ou les fichiers donnés) sur le cluster du .env
+npm run passerelle                        # passerelle seule (port 4000, cockpit /cockpit/)
+npm run demarrer -- --dotnet              # passerelle + 4 apps TS (4101,4102,4104,4105) + app .NET (4103)
+dotnet build apps/debourse-dotnet         # app .NET
+npm run bot -- --classe infrastructure --montant 120000000 --sortie desinvestir   # parcours e2e réel sur le cluster
+npm run test:ui                           # écrans des apps TS (passerelle + apps démarrées)
+npx tsx outils/src/test-dotnet.ts INV-…   # écrans de l'app .NET (dossier arrivé au déboursé : bot --sauf debourse --jusqua post)
+npm run scenario -- liste | r1 | r1 --annuler     # scénarios de changement R/O/S
+npm run impact -- <rôle|typeTache|règle|personne|équipe>
+npm run incidents                         # incidents Camunda actifs (premier réflexe si un dossier n'avance plus)
+npm run audit:verifier | audit:exporter
+npm run generer:client                    # après toute modification de contrats/openapi.yaml (client TS)
+```
 
-## Domaine métier (vocabulaire à respecter)
+Démo accélérée : `DEMO_DELAI_SUIVI=PT1M DEMO_FACTEUR_SLA=0.01` (env ou `.env`). Le `.env` (jamais
+commité) contient le client API Camunda et la config SharePoint ; modèle : `.env.example`.
 
-Processus de bout en bout, dans l'ordre :
+## Architecture (détail : docs/architecture.md)
 
-| Phase | Sous-processus | Rôle |
-|-------|----------------|------|
-| Pré-investissement | **Deal flow** | Suivi des projets (crédit privé, placement privé, infrastructure) du stade « à venir » jusqu'au stade « assigné ». |
-| Pré-investissement | ↳ **Revue diligente** (dans le deal flow) | Étape clé : orchestration d'activités et de documents entre équipes d'investissement et contributeurs. |
-| Pré-investissement | **Déboursé** (fin du deal flow) | Même orchestration activités/documents, avec **exigence d'audit forte**. |
-| Post-investissement | **Suivi périodique** | Collecte et analyse périodiques des informations post-investissement et des dossiers. |
-| Post-investissement | **Désinvestissement** (optionnel, après le suivi) | Sortie de l'investissement. |
+- `passerelle/src/moteur.ts` est le **seul** fichier qui importe `@camunda8/orchestration-cluster-api`.
+  `services.ts` porte la logique partagée par l'API (`app.ts`) et les workers (`workers.ts`).
+- **Patron tâche métier** : toute tâche humaine = call activity vers `tache-metier.bpmn` avec seulement
+  `typeTache` en entrée et `=resultat` en sortie (`propagateAllChildVariables=false`). Rôle, champs,
+  pièces, délai SLA viennent de `config/taches.yaml`. Complétion → message `tache.completee` (clé
+  `tacheId`) ; refus de sécurité/validation → `tache.refusee` (visible dans Operate).
+- Gouvernance = 3 YAML dans `config/` (catalogue, organisation, sécurité), validés par zod et
+  **rechargés à chaud** par la passerelle (audit `gouvernance.rechargee`). Les BPMN/DMN ne contiennent
+  que des rôles abstraits (gabarits `{{variable}}` résolus à l'ouverture de la tâche).
+- Corrélation métier : `dossierId` `INV-AAAA-NNNN`, passé aussi comme `businessId` Camunda.
+- Les variables de processus ne portent que des références de documents `{type, nom, url, sha256}` ;
+  les fichiers vont dans SharePoint (`passerelle/src/documents/`), confinés au dossier
+  `SHAREPOINT_ROOT_FOLDER`. Mode `local` disponible.
+- Registre + audit : SQLite (`donnees/passerelle.sqlite`, ignoré par git). Audit en ajout seul, chaîné SHA-256.
+- Apps TS : `packages/kit-app` fournit boîte de tâches, formulaire généré depuis la définition, dépôt,
+  webhook ; une app = identité + écrans propres. App .NET : client NSwag commité
+  (`apps/debourse-dotnet/Passerelle/PasserelleClient.g.cs`, régénération : voir son README).
 
-Frontière : du deal flow jusqu'au déboursé inclus = **pré-investissement** ; après le déboursé =
-**post-investissement**.
+## Pièges connus
 
-Acteurs : **équipes d'investissement** et **contributeurs** (internes ou externes) qui produisent ou
-valident des documents.
+- **DMN à une seule colonne de sortie** : le `resultVariable` contient directement la valeur (pas un
+  objet). `controles.conformiteRequise` → incident `CONDITION_ERROR` ; écrire `conformiteRequise = true`.
+- Les BPMN/DMN de `modeles/` ont été **générés** par `outils/src/bpmn/processus.ts` et
+  `outils/src/dmn/tables.ts` (`npm run generer:modeles` écrase). Si un fichier a été retouché dans
+  Camunda Modeler, modifier le fichier, pas le générateur.
+- `npm run scenario` modifie de vrais fichiers de `modeles/`/`config/` (sauvegarde dans
+  `donnees/scenarios/`) : toujours `--annuler` avant de commiter.
+- Clients générés (NSwag) envoient `null` pour les propriétés absentes : les schémas zod de l'API
+  utilisent `nullish()`.
+- Windows : arrêter une tâche de fond `npm run …` ne tue pas toujours le processus `node` enfant
+  (port 4000 encore occupé → `EADDRINUSE`). Retrouver le PID via `Get-NetTCPConnection -LocalPort 4000`.
+- Le registre local référence des instances du cluster : après changement de cluster, supprimer
+  `donnees/passerelle.sqlite`.
+- Le cluster `dev-cl` est un essai (expiration ≈ 2026-12-07) ; « Authorizations disabled » est voulu
+  pour l'instant (sécurité appliquée par la passerelle).
 
-## Direction d'architecture (proposée, à confirmer)
+## Invariants à ne pas casser
 
-Détail et justification dans `docs/architecture.md`. Les invariants à ne pas casser :
-
-- Le BPMN du backbone ne contient que le macro-flux et des *call activities* vers les sous-processus ;
-  chaque sous-processus est un BPMN séparé, déployable indépendamment.
-- Les applications ne parlent jamais directement à Zeebe : elles passent par une **passerelle
-  d'intégration** (couche anti-corruption) qui expose un contrat métier (API + événements) et le
-  traduit vers Camunda (job workers sortants, corrélation de messages entrants).
-- La clé de corrélation est un identifiant métier stable (identifiant du dossier d'investissement),
-  jamais la clé d'instance Camunda.
-- Les documents ne transitent pas dans les variables de processus : seulement des références vers le
-  référentiel documentaire.
-- Le déboursé exige une piste d'audit consultable hors de Camunda (qui a fait quoi, quand, sur quelle
-  version de document).
+- Aucune app sous `apps/` ne dépend d'un paquet Camunda ni ne manipule une clé d'instance.
+- Aucun nom de personne/groupe dans un BPMN/DMN ; aucune règle d'affaires codée dans une app.
+- Aucun contenu de document dans une variable de processus.
+- Toute écriture SharePoint reste sous le dossier racine de la PoC (site SDAPS TI, dossier
+  `POC-Maestro-Camunda`) — ne jamais écrire ailleurs sur ce tenant.
