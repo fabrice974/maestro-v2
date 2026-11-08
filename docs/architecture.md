@@ -27,6 +27,11 @@ Les couleurs relient chaque application à son sous-processus. On retrouve les m
 la vue métier, [`presentation-metier.html`](presentation-metier.html) (le parcours d'un dossier,
 les rôles et les règles d'affaires, pour un public métier).
 
+Le choix du moteur lui-même est instruit dans [`choix-moteur.html`](choix-moteur.html) : le même
+découplage avec des agents IA (agent derrière le contrat, ou agent borné dans le modèle), transposé
+sur dix options (Camunda, Flowable, IBM BAW, Pega, Appian, Temporal, Conductor, Azure Durable Task
+Scheduler, AWS Step Functions, moteur maison) et comparé critère par critère, avec ses sources.
+
 ## Décisions structurantes
 
 1. **Une seule porte vers Camunda.** Seul `passerelle/src/moteur.ts` importe le SDK. Les
