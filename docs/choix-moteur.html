@@ -1,0 +1,740 @@
+<title>Choix du moteur Maestro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Mise en page : dossier d'architecture, une colonne de lecture, figures et matrices larges défilables dans leur cadre */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --fg:#18212b; --muted:#5a6573; --line:#c8cfd8; --soft:#e9edf2;
+  --cam:#0d7a64; --cam-soft:#e2f3ee; --app:#6a4cb8; --app-soft:#efeafb; --agt:#9a5a06; --agt-soft:#fbf0dc;
+  --risk:#b3242d; --risk-soft:#fbe9ea; --good:#24713a; --mid:#8a6a00;
+  --display:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141a; --panel:#161d25; --fg:#e5e9ee; --muted:#9aa5b2; --line:#2f3a46; --soft:#1d2630;
+  --cam:#45c6a5; --cam-soft:#123129; --app:#a68ff2; --app-soft:#251f3d; --agt:#f0b45a; --agt-soft:#352610;
+  --risk:#f07079; --risk-soft:#3a1a1e; --good:#7bcf8e; --mid:#e3c45a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --panel:#161d25; --fg:#e5e9ee; --muted:#9aa5b2; --line:#2f3a46; --soft:#1d2630;
+  --cam:#45c6a5; --cam-soft:#123129; --app:#a68ff2; --app-soft:#251f3d; --agt:#f0b45a; --agt-soft:#352610;
+  --risk:#f07079; --risk-soft:#3a1a1e; --good:#7bcf8e; --mid:#e3c45a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--sans);margin:0}
+.wrap{max-width:1160px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:60px}
+header{display:grid;gap:14px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:650 clamp(30px,4.4vw,46px)/1.1 var(--display);margin:0;text-wrap:balance;max-width:24ch}
+h2{font:650 26px/1.2 var(--display);margin:0;text-wrap:balance}
+h3{font:600 16px/1.3 var(--sans);margin:0}
+p{margin:0;max-width:72ch}
+.lead{font-size:17px}
+.muted{color:var(--muted)}
+section{display:grid;gap:18px;min-width:0}
+code{font-family:var(--mono);font-size:.86em;background:var(--soft);padding:1px 5px;border-radius:3px}
+a{color:inherit;text-decoration-color:var(--muted);text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--cam);outline-offset:2px}
+.tag{font:600 10.5px var(--mono);color:var(--muted);letter-spacing:.04em}
+.principle{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.principle div{border-top:2px solid var(--fg);padding-top:10px;display:grid;gap:4px;align-content:start;min-width:0}
+.principle div.ag{border-top-color:var(--agt)}
+.principle b{font:600 14px var(--sans)}
+.principle span{color:var(--muted);font-size:14px}
+.families{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.fam{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:grid;gap:6px;align-content:start;min-width:0}
+.fam b{font:600 14px var(--sans)} .fam span{font-size:13.5px;color:var(--muted)}
+figure{margin:0;display:grid;gap:10px;min-width:0}
+.fig{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px}
+.fig svg{display:block;width:100%;min-width:880px;height:auto}
+figcaption{font-size:13.5px;color:var(--muted);max-width:84ch}
+/* SVG */
+.lane{fill:var(--soft)}
+.bx{fill:var(--panel);stroke:var(--line);stroke-width:1}
+.bxc{fill:var(--cam-soft);stroke:var(--cam);stroke-width:1.2}
+.bxa{fill:var(--app-soft);stroke:var(--app);stroke-width:1.2}
+.bxg{fill:var(--agt-soft);stroke:var(--agt);stroke-width:1.2;stroke-dasharray:5 3}
+.bxgs{fill:var(--agt-soft);stroke:var(--agt);stroke-width:1.2}
+.chev{fill:var(--panel);stroke:var(--fg);stroke-width:1.2}
+.t{fill:var(--fg);font:12px var(--sans)}
+.tb{fill:var(--fg);font:600 12.5px var(--sans)}
+.th{fill:var(--fg);font:600 14px var(--sans)}
+.ts{fill:var(--muted);font:11px var(--sans)}
+.tm{fill:var(--muted);font:10.5px var(--mono)}
+.tl{fill:var(--muted);font:600 10.5px var(--mono);letter-spacing:.06em}
+.tc{fill:var(--cam);font:600 11.5px var(--sans)}
+.ta{fill:var(--app);font:600 11.5px var(--sans)}
+.tg{fill:var(--agt);font:600 11.5px var(--sans)}
+.tgs{fill:var(--agt);font:11px var(--sans)}
+.tr{fill:var(--risk);font:600 11.5px var(--sans)}
+.ln{stroke:var(--fg);stroke-width:1.2;fill:none}
+.lnd{stroke:var(--muted);stroke-width:1;fill:none;stroke-dasharray:4 4}
+.lnc{stroke:var(--cam);stroke-width:1.6;fill:none}
+.lna{stroke:var(--app);stroke-width:1.6;fill:none}
+.lng{stroke:var(--agt);stroke-width:1.6;fill:none}
+.lnr{stroke:var(--risk);stroke-width:1.8;fill:none;stroke-dasharray:6 4}
+.ah{fill:var(--fg)} .ahc{fill:var(--cam)} .aha{fill:var(--app)} .ahr{fill:var(--risk)} .ahg{fill:var(--agt)}
+.ev{fill:var(--panel);stroke:var(--fg);stroke-width:1.2}
+.halo{paint-order:stroke;stroke:var(--panel);stroke-width:5px;stroke-linejoin:round}
+/* Tableaux */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+table.matrix{min-width:1500px}
+table.ex{min-width:1100px}
+table.cmp{min-width:900px}
+th,td{text-align:left;vertical-align:top;padding:9px 11px;border-bottom:1px solid var(--line)}
+thead th{font:600 11.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+tbody th{font-weight:600;white-space:nowrap}
+tbody th small{display:block;font:500 11px var(--mono);color:var(--muted);white-space:normal}
+tr.grp td{background:var(--soft);font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 11px}
+td.cam{border-left:3px solid var(--cam)} td.app{border-left:3px solid var(--app)}
+.r{display:inline-block;width:1.2em;font-weight:700}
+.r.g{color:var(--good)} .r.m{color:var(--mid)} .r.b{color:var(--risk)} .r.n{color:var(--muted)}
+.s{font:10.5px var(--mono);color:var(--muted);white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font:600 11px var(--mono);padding:2px 7px;border-radius:10px;white-space:nowrap}
+.p-cam{background:var(--cam-soft);color:var(--cam)} .p-app{background:var(--app-soft);color:var(--app)} .p-nul{background:var(--soft);color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:10px;align-content:start;min-width:0}
+.card.c{border-top:3px solid var(--cam)} .card.a{border-top:3px solid var(--app)} .card.r{border-top:3px solid var(--risk)} .card.g{border-top:3px solid var(--agt)} .card.n{border-top:3px solid var(--fg)}
+ul{margin:0;padding-left:18px;display:grid;gap:6px}
+li{max-width:76ch}
+.tiers{display:grid;gap:12px}
+.tier{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.tier b{font:600 15px var(--sans)} .tier .k{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tier div{min-width:0;display:grid;gap:6px}
+@media (max-width:640px){.tier{grid-template-columns:1fr}}
+.verdict{background:var(--panel);border:1px solid var(--fg);border-radius:6px;padding:22px;display:grid;gap:12px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 18px}
+details[open]{display:grid;gap:18px}
+summary{cursor:pointer;font:600 16px var(--sans)}
+ol.sources{margin:0;padding-left:0;list-style:none;display:grid;gap:3px;font-size:12.5px}
+ol.sources li{max-width:none;overflow-wrap:anywhere}
+.srcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.srcgrid h3{font-size:13px;margin-bottom:6px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Dossier d'architecture · maestro-v2 · 7 novembre 2026</span>
+  <h1>Le moteur décide, l'application exécute, l'agent assiste</h1>
+  <p class="lead">Maestro sépare l'orchestration du dossier d'investissement, confiée à un moteur BPM, des étapes humaines, confiées à des applications qui ignorent ce moteur. Cette page ajoute les agents IA à ce principe, puis le confronte à dix options : neuf produits du marché et un redéveloppement maison.</p>
+  <p class="muted">Méthode : l'architecture vient du dépôt (<code>docs/architecture.md</code>, <code>modeles/</code>, <code>config/</code>, <code>contrats/openapi.yaml</code>, <code>passerelle/src/</code>). Chaque fait sur un produit renvoie à une source en bas de page (ex. [C3]). <span class="tag">N.D.</span> signale ce qui est non documenté ou introuvable, <span class="tag">PROPOSITION</span> une conception de notre part. Les pages docs.pega.com n'ont pas pu être lues (rendu JavaScript) : les faits Pega viennent de Pega Academy, des forums et des communiqués.</p>
+</header>
+
+<section>
+  <h2>Le principe directeur, en cinq règles</h2>
+  <div class="principle">
+    <div><b>Une seule porte vers le moteur</b><span>Seule la passerelle parle au BPM. Dans maestro, l'adaptateur tient en <code>moteur.ts</code> (99 lignes) et <code>workers.ts</code> (56 lignes).</span></div>
+    <div><b>Le contrat est le seul couplage</b><span>Les apps ne connaissent que <code>contrats/openapi.yaml</code> : lister, lire, déposer, compléter, signaler un fait.</span></div>
+    <div><b>Le modèle ne porte que l'intention</b><span>Le BPMN transmet un <code>typeTache</code>. Champs, pièces, rôle et SLA viennent du catalogue (23 types de tâche).</span></div>
+    <div><b>Les écrans vivent hors du moteur</b><span>Aucun formulaire dans la plateforme. 4 apps TypeScript et 1 app .NET, chacune dans son dépôt.</span></div>
+    <div class="ag"><b>Un agent est un acteur comme un autre</b><span>Il passe par le même contrat, a sa propre identité et son rôle, et subit la même séparation des tâches. Il prépare, il n'approuve pas. <span class="tag">PROPOSITION</span></span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Architecture d'affaires, agents compris</h2>
+  <p>Cette vue ne dépend d'aucun moteur. Les agents se placent au même étage que les applications : ils travaillent derrière la passerelle, pas dans le moteur. Maestro ne contient aucun agent aujourd'hui ; ceux de la figure sont des exemples.</p>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 1000 640" role="img" aria-label="Le backbone BPM enchaîne cinq phases ; la passerelle traduit et contrôle chaque tâche ; applications et agents réalisent les étapes au même étage ; les personnes valident ce que les agents préparent.">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+      <rect class="lane" x="20" y="16" width="960" height="140" rx="4"/>
+      <text class="tl" x="36" y="38">BACKBONE BPM · décide de la suite, applique les règles, garantit les délais</text>
+      <polygon class="chev" points="28,56 192,56 204,84 192,112 28,112 40,84"/><text class="tb" x="116" y="81" text-anchor="middle">Deal flow</text><text class="ts" x="116" y="98" text-anchor="middle">8 tâches</text>
+      <polygon class="chev" points="220,56 384,56 396,84 384,112 220,112 232,84"/><text class="tb" x="308" y="81" text-anchor="middle">Revue diligente</text><text class="ts" x="308" y="98" text-anchor="middle">2 tâches</text>
+      <polygon class="chev" points="412,56 576,56 588,84 576,112 412,112 424,84"/><text class="tb" x="500" y="81" text-anchor="middle">Déboursé</text><text class="ts" x="500" y="98" text-anchor="middle">6 tâches · tirages répétés</text>
+      <polygon class="chev" points="604,56 768,56 780,84 768,112 604,112 616,84"/><text class="tb" x="692" y="81" text-anchor="middle">Suivi périodique</text><text class="ts" x="692" y="98" text-anchor="middle">3 tâches · mensuel</text>
+      <polygon class="chev" points="796,56 960,56 972,84 960,112 796,112 808,84"/><text class="tb" x="884" y="81" text-anchor="middle">Désinvestissement</text><text class="ts" x="884" y="98" text-anchor="middle">4 tâches</text>
+      <text class="tm" x="116" y="138" text-anchor="middle">admissibilité · approbation</text>
+      <text class="tm" x="308" y="138" text-anchor="middle">chantiers de revue</text>
+      <text class="tm" x="500" y="138" text-anchor="middle">contrôles du déboursé</text>
+      <text class="tm" x="692" y="138" text-anchor="middle">alerte covenants</text>
+      <text class="tm" x="884" y="138" text-anchor="middle">niveau d'approbation</text>
+
+      <rect class="lane" x="20" y="196" width="960" height="110" rx="4"/>
+      <text class="tl" x="36" y="218">PASSERELLE · seule porte vers le moteur · contrôle chaque acteur, humain ou agent</text>
+      <rect class="bx" x="28" y="232" width="176" height="58" rx="3"/><text class="tb" x="116" y="256" text-anchor="middle">Catalogue des tâches</text><text class="ts" x="116" y="273" text-anchor="middle">champs, pièces, SLA</text>
+      <rect class="bx" x="220" y="232" width="176" height="58" rx="3"/><text class="tb" x="308" y="256" text-anchor="middle">Organisation</text><text class="ts" x="308" y="273" text-anchor="middle">rôles des personnes et agents</text>
+      <rect class="bx" x="412" y="232" width="176" height="58" rx="3"/><text class="tb" x="500" y="256" text-anchor="middle">Sécurité</text><text class="ts" x="500" y="273" text-anchor="middle">4 yeux · agent ≠ approbateur</text>
+      <rect class="bx" x="604" y="232" width="176" height="58" rx="3"/><text class="tb" x="692" y="256" text-anchor="middle">Documents</text><text class="ts" x="692" y="273" text-anchor="middle">SharePoint · réf. + SHA-256</text>
+      <rect class="bx" x="796" y="232" width="176" height="58" rx="3"/><text class="tb" x="884" y="256" text-anchor="middle">Audit chaîné</text><text class="ts" x="884" y="273" text-anchor="middle">acteur, agent, modèle</text>
+
+      <rect class="lane" x="20" y="346" width="960" height="164" rx="4"/>
+      <text class="tl" x="36" y="368">APPLICATIONS ET AGENTS · même contrat, même contrôle de rôle et de séparation des tâches</text>
+      <rect class="bx" x="28" y="382" width="176" height="52" rx="3"/><text class="tb" x="116" y="404" text-anchor="middle">App Deal flow</text><text class="tm" x="116" y="421" text-anchor="middle">TypeScript</text>
+      <rect class="bx" x="220" y="382" width="176" height="52" rx="3"/><text class="tb" x="308" y="404" text-anchor="middle">App Revue diligente</text><text class="tm" x="308" y="421" text-anchor="middle">TypeScript</text>
+      <rect class="bx" x="412" y="382" width="176" height="52" rx="3"/><text class="tb" x="500" y="404" text-anchor="middle">App Déboursé</text><text class="tm" x="500" y="421" text-anchor="middle">.NET</text>
+      <rect class="bx" x="604" y="382" width="176" height="52" rx="3"/><text class="tb" x="692" y="404" text-anchor="middle">App Suivi périodique</text><text class="tm" x="692" y="421" text-anchor="middle">TypeScript</text>
+      <rect class="bx" x="796" y="382" width="176" height="52" rx="3"/><text class="tb" x="884" y="404" text-anchor="middle">App Désinvestissement</text><text class="tm" x="884" y="421" text-anchor="middle">TypeScript</text>
+      <rect class="bxg" x="28" y="446" width="176" height="50" rx="3"/><text class="tg" x="116" y="466" text-anchor="middle">agent : pré-qualifie</text><text class="tgs" x="116" y="483" text-anchor="middle">le teaser, ébauche le mémo</text>
+      <rect class="bxg" x="220" y="446" width="176" height="50" rx="3"/><text class="tg" x="308" y="466" text-anchor="middle">agent : répartit</text><text class="tgs" x="308" y="483" text-anchor="middle">les chantiers de revue</text>
+      <rect class="bxg" x="412" y="446" width="176" height="50" rx="3"/><text class="tg" x="500" y="466" text-anchor="middle">agent : vérifie les pièces</text><text class="tgs" x="500" y="483" text-anchor="middle">n'approuve jamais</text>
+      <rect class="bxg" x="604" y="446" width="176" height="50" rx="3"/><text class="tg" x="692" y="466" text-anchor="middle">agent : extrait les</text><text class="tgs" x="692" y="483" text-anchor="middle">covenants des états fin.</text>
+      <rect class="bxg" x="796" y="446" width="176" height="50" rx="3"/><text class="tg" x="884" y="466" text-anchor="middle">agent : prépare le</text><text class="tgs" x="884" y="483" text-anchor="middle">dossier de sortie</text>
+
+      <rect class="lane" x="20" y="550" width="960" height="76" rx="4"/>
+      <text class="tl" x="36" y="572">PERSONNES · rôles abstraits résolus à l'ouverture de la tâche</text>
+      <text class="t" x="36" y="594">analyste-{classe d'actif} · comité · juriste · conformité · revue-{chantier} · trésorerie · directeur · gestionnaire de portefeuille</text>
+      <text class="ts" x="36" y="612">valident ce que l'agent prépare ; seules elles approuvent, décaissent et décident de sortir</text>
+
+      <line class="ln" x1="100" y1="112" x2="100" y2="230" marker-end="url(#a1)"/>
+      <line class="ln" x1="132" y1="230" x2="132" y2="114" marker-end="url(#a1)"/>
+      <text class="t halo" x="142" y="172">↓ ouvre la tâche (typeTache)</text>
+      <text class="t halo" x="142" y="188">↑ reçoit le résultat validé</text>
+      <line class="ln" x1="100" y1="290" x2="100" y2="380" marker-end="url(#a1)"/>
+      <line class="ln" x1="132" y1="380" x2="132" y2="292" marker-end="url(#a1)"/>
+      <text class="t halo" x="142" y="322">↓ webhook ou outil MCP</text>
+      <text class="t halo" x="142" y="338">↑ complète · dépose · signale un fait</text>
+      <line class="lnd" x1="308" y1="112" x2="308" y2="230"/><line class="lnd" x1="308" y1="290" x2="308" y2="380"/>
+      <line class="lnd" x1="500" y1="112" x2="500" y2="230"/><line class="lnd" x1="500" y1="290" x2="500" y2="380"/>
+      <line class="lnd" x1="692" y1="112" x2="692" y2="230"/><line class="lnd" x1="692" y1="290" x2="692" y2="380"/>
+      <line class="lnd" x1="884" y1="112" x2="884" y2="230"/><line class="lnd" x1="884" y1="290" x2="884" y2="380"/>
+      <line class="lnd" x1="500" y1="496" x2="500" y2="548"/>
+    </svg>
+    </div>
+    <figcaption>Les flèches de la première colonne valent pour toutes. Les cases ambrées en pointillé sont des exemples d'agents, pas des éléments de la PoC. Un agent reçoit une tâche comme une application, par webhook ou par un outil MCP, et la complète par le même contrat. La passerelle lui applique le rôle requis et la séparation des tâches, ce qui l'empêche par exemple d'approuver un déboursé qu'il a préparé.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Deux façons de mettre un agent dans le processus</h2>
+  <p>Anthropic distingue les <i>workflows</i>, aux chemins prédéfinis, des <i>agents</i>, qui dirigent eux-mêmes leurs étapes, et recommande la solution la plus simple qui suffit [G1]. Le patron A garde le moteur déterministe. Le patron B laisse l'agent choisir son chemin, mais seulement parmi des outils que le modèle a listés.</p>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 1000 420" role="img" aria-label="Patron A : l'agent exécute une tâche derrière le contrat, puis une personne valide son brouillon. Patron B : dans une boîte à outils bornée par le modèle, l'agent choisit l'ordre des outils, puis une personne valide.">
+      <defs>
+        <marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="g2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ahg"/></marker>
+      </defs>
+      <text class="th" x="20" y="26">A · L'agent exécute une tâche</text>
+      <text class="ts" x="20" y="44">fonctionne à l'identique sur les 10 options</text>
+      <rect class="bx" x="20" y="60" width="270" height="44" rx="4"/><text class="tb" x="36" y="80">Moteur</text><text class="ts" x="36" y="96">tâche « ébaucher le mémo préliminaire »</text>
+      <line class="ln" x1="155" y1="104" x2="155" y2="134" marker-end="url(#g1)"/>
+      <rect class="bx" x="20" y="136" width="270" height="56" rx="4"/><text class="tb" x="36" y="156">Passerelle</text><text class="ts" x="36" y="172">rôle agent-redaction · audit de l'appel</text><text class="ts" x="36" y="186">séparation des tâches appliquée ici [G5]</text>
+      <line class="lng" x1="155" y1="192" x2="155" y2="222" marker-end="url(#g2)"/>
+      <rect class="bxgs" x="20" y="224" width="270" height="44" rx="4"/><text class="tg" x="36" y="243">Serveur MCP</text><text class="tgs" x="36" y="259">outils dérivés du contrat ← PROPOSITION</text>
+      <line class="lng" x1="155" y1="268" x2="155" y2="298" marker-end="url(#g2)"/>
+      <rect class="bxgs" x="20" y="300" width="270" height="44" rx="4"/><text class="tg" x="36" y="319">Agent (modèle + outils)</text><text class="tgs" x="36" y="335">lit les pièces, rédige un brouillon</text>
+      <path class="ln" d="M290 164 H330" marker-end="url(#g1)"/>
+      <rect class="bx" x="332" y="136" width="150" height="56" rx="4"/><text class="tb" x="344" y="156">Revue humaine</text><text class="ts" x="344" y="172">analyste valide</text><text class="ts" x="344" y="186">puis la tâche se complète</text>
+      <text class="ts" x="20" y="372">Le moteur ne voit qu'une tâche complétée.</text>
+      <text class="ts" x="20" y="388">MCP ne parle pas d'OpenAPI : la conversion est un choix d'implémentation [G2].</text>
+      <text class="ts" x="20" y="404">Autorisation MCP : OAuth 2.1, pas de relais du jeton [G3].</text>
+
+      <line class="lnd" x1="500" y1="16" x2="500" y2="404"/>
+
+      <text class="th" x="520" y="26">B · L'agent choisit le chemin, dans une boîte bornée</text>
+      <text class="ts" x="520" y="44">natif ou à coder selon l'option (voir la matrice)</text>
+      <rect class="bx" x="520" y="60" width="100" height="40" rx="4"/><text class="t" x="570" y="85" text-anchor="middle">dossier reçu</text>
+      <line class="ln" x1="620" y1="80" x2="646" y2="80" marker-end="url(#g1)"/>
+      <rect class="bxg" x="648" y="58" width="332" height="250" rx="10"/>
+      <text class="tl" x="662" y="78">SOUS-PROCESSUS AD HOC [C16]</text>
+      <rect class="bxgs" x="662" y="90" width="304" height="46" rx="4"/><text class="tg" x="676" y="109">Agent IA</text><text class="tgs" x="676" y="125">choisit outil et ordre · plafond d'itérations</text>
+      <line class="lng" x1="740" y1="136" x2="740" y2="156" marker-end="url(#g2)"/>
+      <line class="lng" x1="890" y1="136" x2="890" y2="156" marker-end="url(#g2)"/>
+      <rect class="bx" x="662" y="158" width="148" height="56" rx="4"/><text class="tb" x="674" y="180">Lire les pièces</text><text class="ts" x="674" y="197">SharePoint, lecture seule</text>
+      <rect class="bx" x="818" y="158" width="148" height="56" rx="4"/><text class="tb" x="830" y="180">Règle chantiers</text><text class="ts" x="830" y="197">table de décision</text>
+      <rect class="bx" x="662" y="224" width="148" height="68" rx="4"/><text class="tb" x="674" y="246">Chantier juridique</text><text class="ts" x="674" y="263">tâche métier humaine</text><text class="ts" x="674" y="278">via la passerelle</text>
+      <rect class="bx" x="818" y="224" width="148" height="68" rx="4"/><text class="tb" x="830" y="246">Chantier fiscal</text><text class="ts" x="830" y="263">tâche métier humaine</text><text class="ts" x="830" y="278">via la passerelle</text>
+      <line class="ln" x1="814" y1="308" x2="814" y2="334" marker-end="url(#g1)"/>
+      <rect class="bx" x="730" y="336" width="168" height="40" rx="4"/><text class="tb" x="814" y="361" text-anchor="middle">Validation humaine</text>
+      <text class="ts" x="520" y="140">Le modèle liste</text>
+      <text class="ts" x="520" y="156">les outils permis.</text>
+      <text class="ts" x="520" y="180">Le moteur exécute,</text>
+      <text class="ts" x="520" y="196">réessaie, lève les</text>
+      <text class="ts" x="520" y="212">incidents [C16].</text>
+      <text class="tr" x="520" y="250">Contenu des pièces</text>
+      <text class="tr" x="520" y="266">injection possible</text>
+      <text class="tr" x="520" y="282">[G4]</text>
+    </svg>
+    </div>
+    <figcaption>Dans le patron B, les chantiers restent des tâches métier qui passent par la passerelle : l'agent peut les ouvrir, mais pas les réaliser à la place d'une personne. Les pièces lues sont du contenu non fiable. OWASP note qu'aucune méthode de prévention de l'injection de prompt n'est garantie et recommande l'approbation humaine des actions à fort impact [G4][G5].</figcaption>
+  </figure>
+  <div class="cols">
+    <div class="card g">
+      <h3>Garde-fous imposés par la passerelle</h3>
+      <ul>
+        <li>Une identité par agent dans <code>securite.yaml</code>, avec ses types de tâche permis. Pas de jeton partagé avec les humains.</li>
+        <li>Séparation des tâches : un agent ne peut pas compléter une tâche d'approbation. Une tâche qu'il a préparée exige une personne différente.</li>
+        <li>Audit chaîné enrichi : agent, modèle, version du prompt, outils appelés, empreinte des pièces lues. La spécification MCP demande de journaliser l'usage des outils [G2].</li>
+        <li>Autorisation par le système aval, pas par le modèle (« complete mediation ») [G5].</li>
+      </ul>
+    </div>
+    <div class="card n">
+      <h3>Cadre réglementaire de référence</h3>
+      <ul>
+        <li>BSIF, ligne directrice E-23 sur le risque de modèle : inclut l'IA, en vigueur le 1er mai 2027. Inventaire, cote de risque, validation indépendante [G6].</li>
+        <li>AMF, ligne directrice sur l'utilisation de l'IA : publiée le 7 avril 2026, en vigueur le 1er mai 2027. Revue humaine des extrants à risque élevé, dirigeant imputable [G7].</li>
+        <li>L'assujettissement d'une caisse d'investissement à ces textes n'a pas été vérifié. Ils servent ici de référence de bonnes pratiques.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Les dix options, en quatre familles</h2>
+  <div class="families">
+    <div class="fam"><b>Suites BPM low-code</b><span>Appian, Pega, IBM Business Automation Workflow. Écrans, données et processus dans la même plateforme. Mode « headless » possible, mais à contre-courant du produit.</span></div>
+    <div class="fam"><b>Moteurs BPMN ouverts</b><span>Camunda 8, Flowable. Modèles BPMN et DMN standard, travail externe par workers, formulaires optionnels.</span></div>
+    <div class="fam"><b>Orchestrateurs par le code</b><span>Temporal, Conductor (Orkes), Azure Durable Task Scheduler, AWS Step Functions. Exécution durable, pas de BPMN, pas de tâche humaine native (sauf Orkes).</span></div>
+    <div class="fam"><b>Maison</b><span>Moteur écrit par la caisse, seul ou sur une bibliothèque (DBOS, Restate, Elsa, MassTransit…). Aucune licence, toute la responsabilité.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Architecture technique de référence</h2>
+  <p>La passerelle, le contrat, les applications et les agents du patron A sont communs aux dix options. Seul l'adaptateur change. Il fait aujourd'hui 155 lignes, mais ce chiffre ne mesure que le code : là où un moteur ne fournit pas un mécanisme, comme le tampon de messages ou la corrélation par dossier, l'adaptateur doit le reconstruire.</p>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 1000 400" role="img" aria-label="Architecture de référence : un emplacement de moteur interchangeable, quatre échanges, puis la passerelle, le contrat, les applications et les agents, communs à toutes les options.">
+      <defs><marker id="r1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+      <marker id="r2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ahg"/></marker></defs>
+      <rect class="bx" x="20" y="16" width="960" height="92" rx="4" stroke-dasharray="6 4"/>
+      <text class="tl" x="36" y="38">EMPLACEMENT DU MOTEUR · interchangeable</text>
+      <rect class="bxa" x="36" y="50" width="220" height="44" rx="3"/><text class="tb" x="146" y="70" text-anchor="middle">Suites</text><text class="ts" x="146" y="86" text-anchor="middle">Appian · Pega · IBM BAW</text>
+      <rect class="bxc" x="270" y="50" width="220" height="44" rx="3"/><text class="tb" x="380" y="70" text-anchor="middle">BPMN ouverts</text><text class="ts" x="380" y="86" text-anchor="middle">Camunda 8 · Flowable</text>
+      <rect class="bx" x="504" y="50" width="240" height="44" rx="3"/><text class="tb" x="624" y="70" text-anchor="middle">Code durable</text><text class="ts" x="624" y="86" text-anchor="middle">Temporal · Conductor · Azure · AWS</text>
+      <rect class="bx" x="758" y="50" width="206" height="44" rx="3"/><text class="tb" x="861" y="70" text-anchor="middle">Maison</text><text class="ts" x="861" y="86" text-anchor="middle">bibliothèque ou rien</text>
+
+      <line class="ln" x1="90" y1="108" x2="90" y2="196" marker-end="url(#r1)"/><text class="tb" x="100" y="140">① ouvrir</text><text class="ts" x="100" y="156">le moteur demande</text><text class="ts" x="100" y="170">une tâche</text>
+      <line class="ln" x1="320" y1="196" x2="320" y2="110" marker-end="url(#r1)"/><text class="tb" x="330" y="140">② compléter</text><text class="ts" x="330" y="156">résultat validé,</text><text class="ts" x="330" y="170">relié à la tâche</text>
+      <line class="ln" x1="550" y1="196" x2="550" y2="110" marker-end="url(#r1)"/><text class="tb" x="560" y="140">③ fait métier</text><text class="ts" x="560" y="156">relié au dossier,</text><text class="ts" x="560" y="170">à toute heure</text>
+      <line class="lng" x1="780" y1="108" x2="780" y2="196" marker-end="url(#r2)"/><text class="tg" x="790" y="140">④ agent borné</text><text class="tgs" x="790" y="156">patron B, dans</text><text class="tgs" x="790" y="170">le moteur</text>
+
+      <rect class="bx" x="20" y="198" width="960" height="44" rx="4"/>
+      <text class="tb" x="36" y="225">Adaptateur moteur-&lt;option&gt;.ts · aujourd'hui moteur.ts + workers.ts = 155 lignes</text>
+      <line class="ln" x1="500" y1="242" x2="500" y2="262" marker-end="url(#r1)"/>
+      <rect class="bx" x="20" y="264" width="960" height="44" rx="4"/>
+      <text class="tb" x="36" y="285">Passerelle commune · 1 651 lignes TypeScript</text>
+      <text class="ts" x="36" y="300">gouvernance YAML · registre · sécurité et séparation des tâches · audit chaîné · SharePoint · webhooks</text>
+      <line class="ln" x1="500" y1="308" x2="500" y2="326" marker-end="url(#r1)"/>
+      <rect class="bx" x="20" y="328" width="620" height="54" rx="4"/><text class="tb" x="36" y="350">contrats/openapi.yaml → 5 applications</text><text class="ts" x="36" y="368">4 TypeScript (SDK) · 1 .NET (client NSwag) · aucune modification</text>
+      <rect class="bxgs" x="656" y="328" width="324" height="54" rx="4"/><text class="tg" x="672" y="350">Serveur MCP → agents (patron A)</text><text class="tgs" x="672" y="368">mêmes routes, autre transport ← PROPOSITION</text>
+    </svg>
+    </div>
+    <figcaption>Les quatre échanges numérotés sont les seuls points où les options diffèrent techniquement. Le tableau suivant dit comment chacune les réalise.</figcaption>
+  </figure>
+
+  <div class="tablewrap">
+  <table class="ex">
+    <thead><tr><th>Option</th><th>① Ouvrir une tâche</th><th>② Compléter</th><th>③ Relier un fait au dossier</th><th>④ Agent borné dans le moteur</th></tr></thead>
+    <tbody>
+      <tr><th>Camunda 8</th><td>job <code>tache.ouvrir</code> activé par la passerelle [C2]</td><td>message <code>tache.completee</code>, clé <code>tacheId</code>, TTL, messageId [C3]</td><td>message à clé <code>dossierId</code>, mis en tampon [C3]</td><td>AI Agent sub-process sur un sous-processus ad hoc [C16]</td></tr>
+      <tr><th>Flowable</th><td>external worker task : acquire and lock [F2]</td><td>complétion du job par REST [F2]</td><td><code>messageEventReceived</code> sur l'exécution, à retrouver d'abord par businessKey [F1]</td><td>agent task BPMN/CMMN, agent orchestrateur (doc Enterprise) [F4]</td></tr>
+      <tr><th>IBM BAW</th><td>la passerelle interroge <code>GET /bpm/user-tasks</code> [I1]</td><td><code>POST …/claim</code> puis <code>…/complete</code> [I1]</td><td>message XML à l'Event Manager, qui déclenche un UCA [I2]</td><td>activité « AI agent » vers watsonx Orchestrate (25.0.1+) [I5]</td></tr>
+      <tr><th>Pega</th><td>liste de travail via DX API v2 [P1][P2]</td><td><code>PATCH /assignments/{key}/actions/{action}</code> avec eTag [P2]</td><td><span class="tag">N.D.</span> dans la DX API [P2]</td><td>agent step dans le cycle de vie du dossier, revue humaine [P6]</td></tr>
+      <tr><th>Appian</th><td>Call Integration vers la passerelle, sans reprise auto [A6]</td><td>Web API qui exécute <code>a!completeTask</code> [A3]</td><td>JMS seulement, perdu si processus en pause [A4]</td><td>smart service Execute AI Agent [A16]</td></tr>
+      <tr><th>Temporal</th><td>activity exécutée par un worker de la passerelle [B1]</td><td>Update ou Signal sur le Workflow ID [T1]</td><td>Signal sur Workflow ID = <code>dossierId</code> [T2]</td><td>en code : appels modèle en activities (intégration SDK d'agents) [T8]</td></tr>
+      <tr><th>Conductor</th><td>worker ou tâche HUMAN [O2]</td><td><code>POST /api/tasks</code> ou <code>/tasks/{workflowId}/{taskRef}/COMPLETED</code> [O4]</td><td>event handler : <code>taskId</code> ou <code>workflowId</code> requis, pas de clé métier [O3]</td><td>LLM_CHAT_COMPLETE, CALL_MCP_TOOL dans un DO_WHILE plafonné [O5]</td></tr>
+      <tr><th>Azure DTS</th><td>activity ou appel sortant [M1]</td><td><code>RaiseEventAsync(instanceId)</code>, au moins une fois [M1]</td><td>instanceId = <code>dossierId</code>, événement tamponné [M1]</td><td>Agent Framework, extension durable (préversion) [M6]</td></tr>
+      <tr><th>Step Functions</th><td>tâche <code>.waitForTaskToken</code> [W1]</td><td><code>SendTaskSuccess(token)</code> [W1]</td><td>la passerelle retrouve le jeton du dossier [W1]</td><td>InvokeHarness : 15 min max, sans rappel [W7]</td></tr>
+      <tr><th>Maison</th><td>file de jobs (pg-boss, BullMQ) [B3][B4]</td><td>table d'attente + reprise à coder</td><td>à coder (ou DBOS send/recv, Inngest waitForEvent) [B9][B10]</td><td>à coder avec un SDK d'agents</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Matrice comparative</h2>
+  <p>Chaque cellule note l'option sur un critère, pour ce principe précis : découpler, aucun écran dans la plateforme, dossiers de plusieurs années, agents gouvernés. La note ne juge pas le produit dans l'absolu.</p>
+  <div class="legend"><span><b class="r g">●</b> favorable</span><span><b class="r m">◐</b> partiel ou contraint</span><span><b class="r b">○</b> défavorable</span><span><b class="r n">?</b> non documenté</span></div>
+  <div class="tablewrap">
+  <table class="matrix">
+    <thead><tr><th>Option</th><th>Modèle standard (réversibilité)</th><th>Travail externe et corrélation</th><th>Dossier de plusieurs années</th><th>Instances en vol après un changement</th><th>Coût des personnes dans les apps</th><th>Agents bornés natifs</th><th>Hébergement au Canada</th><th>Expertise sur le chemin critique</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="9">Moteurs BPMN ouverts</td></tr>
+      <tr><th>Camunda 8<small>SaaS ou self-managed</small></th>
+        <td><b class="r g">●</b> BPMN 2.0, DMN 1.3 <span class="s">[C5]</span></td>
+        <td><b class="r g">●</b> jobs ; messages à clé, TTL, idempotence <span class="s">[C2][C3]</span></td>
+        <td><b class="r g">●</b> aucune limite de durée trouvée ; 4 Mo de variables <span class="s">[C12]</span></td>
+        <td><b class="r m">◐</b> migration possible, contraintes fortes <span class="s">[C8]</span></td>
+        <td><b class="r g">●</b> facturé aux instances racines <span class="s">[C6]</span></td>
+        <td><b class="r g">●</b> AI Agent sub-process ; MCP en alpha <span class="s">[C16][C17]</span></td>
+        <td><b class="r g">●</b> SaaS Montréal, Toronto (GCP) <span class="s">[C15]</span></td>
+        <td>BPMN, DMN, FEEL ; dev TS/.NET</td></tr>
+      <tr><th>Flowable<small>OSS ou Enterprise</small></th>
+        <td><b class="r g">●</b> BPMN, CMMN, DMN <span class="s">[F3]</span></td>
+        <td><b class="r m">◐</b> external worker, API de tâches ; message par exécution <span class="s">[F1][F2]</span></td>
+        <td><b class="r n">?</b> timers BPMN standard ; durée max non documentée</td>
+        <td><b class="r g">●</b> par instance, définition ou lot (OSS partiel) <span class="s">[F5]</span></td>
+        <td><b class="r m">◐</b> moteurs Apache 2.0 ; Enterprise sans prix public <span class="s">[F3]</span></td>
+        <td><b class="r g">●</b> agent task, orchestrateur CMMN (doc Enterprise) <span class="s">[F4]</span></td>
+        <td><b class="r n">?</b> région cloud non publiée ; auto-hébergeable</td>
+        <td>BPMN, CMMN ; Java ; client .NET en 0.0.1 <span class="s">[F6]</span></td></tr>
+      <tr class="grp"><td colspan="9">Suites BPM low-code</td></tr>
+      <tr><th>IBM BAW<small>CP4BA, watsonx</small></th>
+        <td><b class="r m">◐</b> BPMN import/export sans objets métier ; DMN via ADS <span class="s">[I4]</span></td>
+        <td><b class="r m">◐</b> REST claim/complete ; événements via Event Manager <span class="s">[I1][I2]</span></td>
+        <td><b class="r n">?</b> non documenté</td>
+        <td><b class="r g">●</b> migration de snapshot (pas les solutions Case) <span class="s">[I6]</span></td>
+        <td><b class="r m">◐</b> Authorized User : multiplexage compté ; VPC sinon <span class="s">[I3]</span></td>
+        <td><b class="r m">◐</b> activité AI agent ; garde-fous non documentés <span class="s">[I5]</span></td>
+        <td><b class="r m">◐</b> watsonx Orchestrate à Toronto ; CP4BA SaaS ? <span class="s">[I7]</span></td>
+        <td>BAW certifié ; Event Manager, UCA</td></tr>
+      <tr><th>Pega<small>Infinity</small></th>
+        <td><b class="r b">○</b> pas d'import BPMN ; DMN non trouvé <span class="s">[P4]</span></td>
+        <td><b class="r m">◐</b> DX API v2 ; corrélation d'événement ? <span class="s">[P1][P2]</span></td>
+        <td><b class="r n">?</b> non documenté</td>
+        <td><b class="r b">○</b> pas d'outil de migration <span class="s">[P5]</span></td>
+        <td><b class="r m">◐</b> prix par dossier (Infinity 26) ; utilisateurs externes ? <span class="s">[P3]</span></td>
+        <td><b class="r m">◐</b> agent step + revue humaine (sources communautaires) <span class="s">[P6]</span></td>
+        <td><b class="r n">?</b> non publié ; sur site possible</td>
+        <td>CSSA puis LSA (36 mois recommandés) <span class="s">[P7]</span></td></tr>
+      <tr><th>Appian</th>
+        <td><b class="r b">○</b> ni BPMN ni fichier .dmn <span class="s">[A9]</span></td>
+        <td><b class="r b">○</b> pas d'API de tâches ; Web APIs à écrire ; JMS <span class="s">[A3][A4]</span></td>
+        <td><b class="r b">○</b> attente longue = anti-patron mémoire <span class="s">[A10]</span></td>
+        <td><b class="r b">○</b> pas de migration native <span class="s">[A13]</span></td>
+        <td><b class="r b">○</b> clause headless : chaque personne licenciée <span class="s">[A12]</span></td>
+        <td><b class="r m">◐</b> Execute AI Agent, tiers Advanced+ <span class="s">[A16]</span></td>
+        <td><b class="r n">?</b> non vérifié</td>
+        <td>Appian : Web APIs, process models</td></tr>
+      <tr class="grp"><td colspan="9">Orchestrateurs par le code</td></tr>
+      <tr><th>Temporal<small>OSS ou Cloud</small></th>
+        <td><b class="r b">○</b> code seulement <span class="s">[T1]</span></td>
+        <td><b class="r g">●</b> Workflow ID = dossierId ; signals, updates <span class="s">[T1][T2]</span></td>
+        <td><b class="r m">◐</b> 51 200 événements max → continue-as-new <span class="s">[T3][T4]</span></td>
+        <td><b class="r m">◐</b> worker versioning, patching <span class="s">[T7]</span></td>
+        <td><b class="r g">●</b> par action ; serveur MIT <span class="s">[T5]</span></td>
+        <td><b class="r m">◐</b> en code, intégrations SDK d'agents <span class="s">[T8]</span></td>
+        <td><b class="r g">●</b> Cloud AWS ca-central-1 <span class="s">[T6]</span></td>
+        <td>dev ; code de workflow déterministe</td></tr>
+      <tr><th>Conductor<small>OSS ou Orkes</small></th>
+        <td><b class="r b">○</b> JSON <span class="s">[O6]</span></td>
+        <td><b class="r m">◐</b> HUMAN, WAIT ; pas de corrélation par clé métier <span class="s">[O3][O4]</span></td>
+        <td><b class="r n">?</b> non documenté</td>
+        <td><b class="r b">○</b> terminer puis redémarrer <span class="s">[O6]</span></td>
+        <td><b class="r m">◐</b> OSS Apache 2.0 ; Orkes sur devis <span class="s">[O7]</span></td>
+        <td><b class="r g">●</b> tâches LLM, outils MCP, boucle plafonnée <span class="s">[O5]</span></td>
+        <td><b class="r n">?</b> régions non publiées</td>
+        <td>JSON + dev</td></tr>
+      <tr><th>Azure DTS<small>Durable Task Scheduler</small></th>
+        <td><b class="r b">○</b> code ; Logic Apps : règles Rete, pas DMN <span class="s">[M8]</span></td>
+        <td><b class="r g">●</b> instanceId = dossierId ; événements tamponnés <span class="s">[M1]</span></td>
+        <td><b class="r m">◐</b> rétention 30–90 j (portée ?) ; timers JS 6 j <span class="s">[M2][M3]</span></td>
+        <td><b class="r b">○</b> version figée, anciennes branches à garder <span class="s">[M4]</span></td>
+        <td><b class="r g">●</b> par action ou capacité <span class="s">[M3]</span></td>
+        <td><b class="r m">◐</b> agents durables en préversion <span class="s">[M6]</span></td>
+        <td><b class="r m">◐</b> agents Foundry au Canada ; DTS ? <span class="s">[M7]</span></td>
+        <td>dev .NET ; SDK TS en préversion <span class="s">[M5]</span></td></tr>
+      <tr><th>Step Functions<small>AWS, Standard</small></th>
+        <td><b class="r b">○</b> JSON ASL <span class="s">[W1]</span></td>
+        <td><b class="r m">◐</b> jeton de tâche, pas de clé métier <span class="s">[W1]</span></td>
+        <td><b class="r b">○</b> 1 an max, 25 000 événements <span class="s">[W2]</span></td>
+        <td><b class="r b">○</b> version figée au démarrage <span class="s">[W4]</span></td>
+        <td><b class="r g">●</b> par transition d'état <span class="s">[W3]</span></td>
+        <td><b class="r m">◐</b> 15 min sans rappel ; Bedrock Agents fermé <span class="s">[W6][W7]</span></td>
+        <td><b class="r g">●</b> ca-central-1, ca-west-1 <span class="s">[W5]</span></td>
+        <td>ASL ; services AWS</td></tr>
+      <tr class="grp"><td colspan="9">Maison</td></tr>
+      <tr><th>Redéveloppement<small>avec ou sans bibliothèque</small></th>
+        <td><b class="r b">○</b> format à inventer</td>
+        <td><b class="r b">○</b> tampon, idempotence, reprise à construire</td>
+        <td><b class="r b">○</b> persistance et timers à garantir soi-même <span class="s">[B1]</span></td>
+        <td><b class="r b">○</b> versionnement d'instances, problème dur <span class="s">[B2]</span></td>
+        <td><b class="r g">●</b> aucune licence ; équipe plateforme permanente</td>
+        <td><b class="r b">○</b> à coder</td>
+        <td><b class="r g">●</b> où la caisse héberge</td>
+        <td>tout : moteur, exploitation, astreinte</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Redévelopper maison : ce qui existe déjà, ce qui manque</h2>
+  <p>Maestro a déjà construit tout ce qui entoure le moteur. Ce qui manque, c'est le moteur lui-même, c'est-à-dire la partie la plus difficile à garantir sur plusieurs années.</p>
+  <div class="cols">
+    <div class="card c">
+      <h3>Déjà construit dans la passerelle</h3>
+      <ul>
+        <li>Gouvernance YAML rechargée à chaud : catalogue, organisation, sécurité.</li>
+        <li>Registre des dossiers et des tâches, webhooks vers les applications.</li>
+        <li>Validation avant corrélation : rôle, séparation des tâches par cycle, champs, dates, pièces.</li>
+        <li>Audit en ajout seul, chaîné SHA-256, vérifiable et exporté.</li>
+        <li>Documents SharePoint par référence et empreinte.</li>
+      </ul>
+    </div>
+    <div class="card r">
+      <h3>À construire pour se passer de moteur</h3>
+      <ul>
+        <li>Exécution durable et reprise après panne au bon endroit : Temporal en fait une garantie d'exécution « effectively once » sur des secondes ou des années [B1].</li>
+        <li>Timers persistants sur des années, et SLA absolus.</li>
+        <li>Corrélation avec tampon et idempotence.</li>
+        <li>Versionnement des définitions avec des dossiers en vol depuis des années. DBOS montre la difficulté : seuls les workflows de la version courante sont repris, sinon il faut un fork ou un patch [B2].</li>
+        <li>Règles de décision lisibles par le métier, console d'exploitation (incidents, reprise), modélisation visuelle.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tablewrap">
+  <table class="cmp">
+    <thead><tr><th>Bibliothèque</th><th>Licence</th><th>Fournit</th><th>Ne fournit pas</th></tr></thead>
+    <tbody>
+      <tr><th>pg-boss (TS)</th><td>MIT</td><td>jobs différés, cron, retries, dead letter</td><td>corrélation par message, versionnement <span class="s">[B3]</span></td></tr>
+      <tr><th>BullMQ (TS)</th><td>MIT, Pro payant</td><td>jobs différés, flows parent/enfant, déduplication</td><td>machine à états, versionnement <span class="s">[B4]</span></td></tr>
+      <tr><th>DBOS Transact (TS)</th><td>MIT</td><td>sommeil durable, send/recv exactly-once, version applicative</td><td>modèle visuel, règles, migration en place <span class="s">[B9][B2]</span></td></tr>
+      <tr><th>Restate</th><td>BSL 1.1 → Apache 2.0 après 4 ans</td><td>exécution durable, timers, état par entité</td><td>SDK .NET <span class="s">[B8]</span></td></tr>
+      <tr><th>Inngest</th><td>serveur SSPL, SDK Apache 2.0</td><td>étapes avec retries, <code>waitForEvent</code> corrélé</td><td>BPMN, règles <span class="s">[B10]</span></td></tr>
+      <tr><th>Elsa Workflows (.NET)</th><td>MIT</td><td>designer web, workflows longs, versionnement et migration par API</td><td>BPMN ; timers durables sans Quartz/Hangfire <span class="s">[B7]</span></td></tr>
+      <tr><th>MassTransit (.NET)</th><td>v9 commerciale, v8 open source</td><td>sagas à états avec CorrelationId, événements planifiés</td><td>modèle visuel, règles <span class="s">[B6]</span></td></tr>
+      <tr><th>Hangfire (.NET)</th><td>LGPLv3, Pro payant</td><td>jobs différés, continuations</td><td>corrélation métier <span class="s">[B5]</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">Aucune bibliothèque ne réunit corrélation métier, versionnement d'instances, règles de décision et console d'exploitation. Je n'ai trouvé aucun retour d'expérience « build vs buy » fiable sur les moteurs de workflow : la recommandation qui suit est un jugement, pas une donnée.</p>
+</section>
+
+<section>
+  <h2>Ce qui ferait échouer chaque famille</h2>
+  <div class="cols">
+    <div class="card a">
+      <h3>Suites low-code (Appian, Pega, IBM)</h3>
+      <ul>
+        <li>On paie une plateforme d'écrans sans s'en servir. Appian licencie toute personne passant par une interface séparée [A12]. Chez IBM, la licence Authorized User compte explicitement le multiplexage [I3]. Seul Pega, avec un prix par dossier, pourrait y échapper : à confirmer au contrat [P3].</li>
+        <li>L'API est pensée pour reproduire les écrans de la plateforme. La DX API de Pega renvoie des vues à modéliser dans Pega (notre lecture, non sourcée).</li>
+        <li>L'expertise reste rare et sur le chemin critique : un LSA Pega, par exemple, est recommandé après 36 mois d'expérience post-CSSA [P7].</li>
+      </ul>
+    </div>
+    <div class="card c">
+      <h3>Moteurs BPMN ouverts (Camunda, Flowable)</h3>
+      <ul>
+        <li>La passerelle devient un produit critique à industrialiser : Entra ID à la place des jetons de démo, haute disponibilité, astreinte.</li>
+        <li>Camunda : rotation rapide des API, Tasklist v1 supprimée en 8.10 [C4], pas de prix public [C7].</li>
+        <li>Flowable : client .NET en 0.0.1 [F6], fonctions agents documentées côté Enterprise [F4], prix Enterprise non publié.</li>
+      </ul>
+    </div>
+    <div class="card n">
+      <h3>Orchestrateurs par le code</h3>
+      <ul>
+        <li>Le processus n'est plus lisible par le métier : pas de BPMN, pas de DMN. Les règles d'affaires deviennent du code, ou un moteur de règles de plus.</li>
+        <li>Plusieurs années de vie se heurtent à des plafonds : 1 an chez Step Functions [W2], 51 200 événements chez Temporal [T3], rétention incertaine chez Azure DTS [M3].</li>
+        <li>Changer un workflow en vol exige de garder l'ancien code déterministe [M4][T7].</li>
+      </ul>
+    </div>
+    <div class="card r">
+      <h3>Maison</h3>
+      <ul>
+        <li>Le risque se concentre sur la partie la plus difficile, l'exécution durable et le versionnement, que des équipes comme Uber et Netflix ont dû outiller et ouvrir [B11].</li>
+        <li>L'expertise ne disparaît pas : elle passe d'un éditeur à une équipe interne, qui doit rester en place aussi longtemps que vivent les dossiers.</li>
+        <li>Les agents (patron B) seraient aussi à construire de zéro.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Classement pour ce principe</h2>
+  <p>Critères pesés dans cet ordre : modèle lisible et réversible, corrélation et travail externe natifs, tenue sur plusieurs années, coût indépendant du nombre de personnes, agents bornés. Les points marqués « ? » peuvent faire bouger une option d'un palier.</p>
+  <div class="tiers">
+    <div class="tier"><div><span class="k">Palier 1</span><b>Camunda 8, Flowable</b></div><div><p>Seuls à combiner BPMN et DMN standard, travail externe natif, migration d'instances et agents bornés dans le modèle. Camunda a l'avantage de l'existant (la PoC tourne), d'un SaaS au Canada et d'un prix aux instances. Flowable est l'alternative ouverte la plus directe (Apache 2.0, CMMN en plus). Sa faiblesse : un client .NET encore jeune.</p></div></div>
+    <div class="tier"><div><span class="k">Palier 2</span><b>Temporal, Azure DTS</b></div><div><p>Excellente corrélation par dossier, coût à l'usage. On perd en revanche le modèle lisible par le métier et les tables de décision. Azure DTS s'intègre à l'écosystème Microsoft de la caisse, mais son SDK TypeScript est en préversion. Temporal impose continue-as-new pour des dossiers de plusieurs années.</p></div></div>
+    <div class="tier"><div><span class="k">Palier 3</span><b>IBM BAW, Pega</b></div><div><p>Riches et capables de migration (IBM), mais construits autour de leurs propres écrans. La licence des utilisateurs indirects est à négocier, et l'expertise est rare. Pega est à revoir si le prix par dossier d'Infinity 26 couvre vraiment les utilisateurs externes.</p></div></div>
+    <div class="tier"><div><span class="k">Écartés</span><b>Appian, Step Functions, Conductor</b></div><div><p>Appian : la clause headless annule l'objectif économique et l'attente longue est un anti-patron documenté. Step Functions : une exécution ne peut pas dépasser 1 an. Conductor : ni corrélation par clé métier, ni migration en place.</p></div></div>
+    <div class="tier"><div><span class="k">Hors classement</span><b>Maison</b></div><div><p>À réserver à la passerelle, déjà construite. Écrire le moteur reviendrait à refaire, seul et sans standard, ce que le palier 1 fournit.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="verdict">
+    <span class="eyebrow">Verdict</span>
+    <h2>Acheter le moteur, construire la passerelle, gouverner les agents à la passerelle</h2>
+    <p>Le découplage tient grâce à la passerelle et au contrat, quel que soit le moteur : les cinq applications et les agents du patron A ne changeraient pas d'une ligne. Le choix du moteur se joue donc sur trois points :</p>
+    <ul>
+      <li>la lisibilité métier du modèle ;</li>
+      <li>la tenue sur des dossiers de plusieurs années ;</li>
+      <li>un modèle de prix qui ne refacture pas les personnes que l'on a sorties de la plateforme.</li>
+    </ul>
+    <p>Sur ces trois points, Camunda 8 et Flowable passent ; les suites low-code non. Pour les agents, commencer par le patron A, l'agent qui prépare et la personne qui valide : il fonctionne avec tous les moteurs et réutilise la sécurité de la passerelle. Réserver le patron B aux étapes vraiment ouvertes, comme la répartition des chantiers de revue.</p>
+    <p class="muted">Avant toute décision : confirmations écrites des éditeurs sur la licence des utilisateurs indirects (Appian, IBM, Pega, Flowable Enterprise), régions canadiennes des services non confirmés, rétention des instances en cours chez Azure DTS, et assujettissement de la caisse à E-23 et à la ligne directrice de l'AMF.</p>
+  </div>
+</section>
+
+<details>
+  <summary>Zoom : Camunda et Appian, échange par échange</summary>
+  <figure>
+    <div class="fig">
+    <svg viewBox="0 0 1070 650" role="img" aria-label="Comparaison technique : à gauche Camunda, avec activation de jobs et messages corrélés ; à droite Appian, avec Call Integration, Web API qui exécute a!completeTask et licence requise pour les utilisateurs des applications.">
+      <defs>
+        <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="bc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ahc"/></marker>
+        <marker id="ba" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="aha"/></marker>
+        <marker id="br" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ahr"/></marker>
+      </defs>
+      <text class="tl" x="20" y="28">AUJOURD'HUI · CAMUNDA 8 SAAS</text>
+      <text class="tl" x="540" y="28">TRANSPOSITION · APPIAN</text>
+      <rect class="bxc" x="20" y="44" width="480" height="170" rx="4"/>
+      <text class="th" x="36" y="70">Camunda 8 SaaS (Zeebe)</text>
+      <text class="t" x="36" y="96">backbone.bpmn + 5 sous-processus (BPMN 2.0 standard)</text>
+      <text class="t" x="36" y="116">call activity → tache-metier.bpmn (typeTache seulement)</text>
+      <text class="t" x="36" y="136">5 tables DMN 1.3 natives (business rule task)</text>
+      <text class="t" x="36" y="156">Operate : incidents, reprise, migration d'instances</text>
+      <text class="tm" x="36" y="190">facturé : instances racines (modèle 2025) [C6]</text>
+      <rect class="bxa" x="540" y="44" width="480" height="170" rx="4"/>
+      <text class="th" x="556" y="70">Appian (process models)</text>
+      <text class="t" x="556" y="96">modèle parent + sous-processus (format propriétaire)</text>
+      <text class="t" x="556" y="116">sous-processus « Tâche métier » ← PROPOSITION</text>
+      <text class="t" x="556" y="136">Decisions : tables Appian, sans import/export .dmn [A9]</text>
+      <text class="t" x="556" y="156">Web APIs (expressions) exécutées par un compte de service [A1]</text>
+      <text class="tm" x="556" y="190">facturé : par utilisateur, par mois, par app [A11]</text>
+      <line class="lnc" x1="60" y1="214" x2="60" y2="328" marker-end="url(#bc)"/>
+      <text class="tc" x="70" y="246">① ouvrir</text><text class="ts" x="70" y="262">job tache.ouvrir</text><text class="ts" x="70" y="276">pull · retries</text><text class="ts" x="70" y="290">→ incident [C2]</text>
+      <line class="lnc" x1="220" y1="328" x2="220" y2="216" marker-end="url(#bc)"/>
+      <text class="tc" x="230" y="246">② compléter [C3]</text><text class="ts" x="230" y="262">message tache.completee</text><text class="ts" x="230" y="276">clé tacheId · TTL</text><text class="ts" x="230" y="290">messageId idempotent</text>
+      <line class="lnc" x1="380" y1="328" x2="380" y2="216" marker-end="url(#bc)"/>
+      <text class="tc" x="390" y="246">③ fait métier</text><text class="ts" x="390" y="262">message clé dossierId</text><text class="ts" x="390" y="276">tamponné jusqu'au</text><text class="ts" x="390" y="290">prochain point d'attente</text>
+      <line class="lna" x1="580" y1="214" x2="580" y2="328" marker-end="url(#ba)"/>
+      <text class="ta" x="590" y="246">① ouvrir</text><text class="ts" x="590" y="262">Call Integration (push)</text><text class="ts" x="590" y="276">connected system OpenAPI</text><text class="tr" x="590" y="292">sans reprise [A6]</text>
+      <line class="lna" x1="740" y1="328" x2="740" y2="216" marker-end="url(#ba)"/>
+      <text class="ta" x="750" y="246">② compléter</text><text class="ts" x="750" y="262">Web API → a!completeTask</text><text class="ts" x="750" y="276">sur une tâche d'attente</text><text class="tr" x="750" y="292">autoscale : non [A3]</text>
+      <line class="lna" x1="900" y1="328" x2="900" y2="216" marker-end="url(#ba)"/>
+      <text class="ta" x="910" y="246">③ fait métier</text><text class="ts" x="910" y="262">messages : JMS</text><text class="ts" x="910" y="276">perdus si pause [A4]</text><text class="tr" x="910" y="292">tampon : passerelle</text>
+      <rect class="bx" x="20" y="330" width="480" height="58" rx="4"/><text class="tb" x="36" y="354">moteur.ts</text><text class="ts" x="36" y="372">SDK @camunda8/orchestration-cluster-api · OAuth client credentials</text>
+      <rect class="bx" x="540" y="330" width="480" height="58" rx="4"/><text class="tb" x="556" y="354">moteur-appian.ts ← PROPOSITION</text><text class="ts" x="556" y="372">client des Web APIs (OAuth client credentials) + route d'ouverture</text>
+      <line class="ln" x1="260" y1="388" x2="260" y2="426" marker-end="url(#b1)"/>
+      <line class="ln" x1="780" y1="388" x2="780" y2="426" marker-end="url(#b1)"/>
+      <rect class="bx" x="20" y="428" width="1000" height="76" rx="4"/>
+      <text class="tl" x="36" y="450">COMMUN AUX DEUX OPTIONS</text>
+      <text class="tb" x="36" y="472">Passerelle : services.ts · gouvernance YAML rechargée à chaud · registre · audit chaîné · SharePoint</text>
+      <text class="ts" x="36" y="490">validation avant corrélation : application, rôle, séparation des tâches par cycle, champs, dates, pièces</text>
+      <line class="ln" x1="520" y1="504" x2="520" y2="530" marker-end="url(#b1)"/>
+      <rect class="bx" x="20" y="532" width="1000" height="34" rx="4"/><text class="tb" x="520" y="554" text-anchor="middle">contrats/openapi.yaml : inchangé</text>
+      <rect class="bx" x="20" y="586" width="188" height="44" rx="3"/><text class="t" x="114" y="613" text-anchor="middle">Deal flow · TS</text>
+      <rect class="bx" x="223" y="586" width="188" height="44" rx="3"/><text class="t" x="317" y="613" text-anchor="middle">Revue diligente · TS</text>
+      <rect class="bx" x="426" y="586" width="188" height="44" rx="3"/><text class="t" x="520" y="613" text-anchor="middle">Déboursé · .NET</text>
+      <rect class="bx" x="629" y="586" width="188" height="44" rx="3"/><text class="t" x="723" y="613" text-anchor="middle">Suivi périodique · TS</text>
+      <rect class="bx" x="832" y="586" width="188" height="44" rx="3"/><text class="t" x="926" y="613" text-anchor="middle">Désinvestissement · TS</text>
+      <line class="lnd" x1="520" y1="566" x2="520" y2="586"/>
+      <path class="lnr" d="M1020 608 H1052 V130 H1024" marker-end="url(#br)"/>
+      <text class="tr" transform="translate(1066 470) rotate(-90)">chaque personne des apps = utilisateur Appian licencié [A12]</text>
+    </svg>
+    </div>
+    <figcaption>La ligne rouge en pointillé n'est pas un flux : c'est l'obligation contractuelle de licencier les utilisateurs indirects chez Appian [A12]. Un refus de validation, aujourd'hui visible dans Operate (<code>tache.refusee</code>), ne serait visible chez Appian que dans l'audit de la passerelle.</figcaption>
+  </figure>
+  <div class="tablewrap">
+  <table class="cmp">
+    <thead><tr><th>Critère</th><th>Camunda 8</th><th>Appian</th><th>Avantage</th></tr></thead>
+    <tbody>
+      <tr><th>API de tâches</th><td class="cam">REST v2 natif : jobs, messages, user tasks [C1][C2]</td><td class="app">aucune API prête ; Web APIs + <code>a!queryProcessAnalytics</code> ; réclamer = plug-in non supporté [A2][A3][A5]</td><td><span class="pill p-cam">Camunda</span></td></tr>
+      <tr><th>Attente d'un fait externe</th><td class="cam">message à clé, TTL, idempotent [C3]</td><td class="app">JMS, perdu si en pause, pas d'autoscale [A4]</td><td><span class="pill p-cam">Camunda</span></td></tr>
+      <tr><th>Reprise des appels sortants</th><td class="cam">retries puis incident [C2]</td><td class="app">« does not automatically retry » [A6]</td><td><span class="pill p-cam">Camunda</span></td></tr>
+      <tr><th>Licence</th><td class="cam">instances racines, utilisateurs illimités en Enterprise [C6][C7]</td><td class="app">chaque personne licenciée (clause headless) [A12]</td><td><span class="pill p-cam">Camunda</span></td></tr>
+      <tr><th>Stabilité de l'API</th><td class="cam">suppressions en 8.8–8.10 [C4]</td><td class="app">smart services stables de 23.x à 26.x [A3]</td><td><span class="pill p-app">Appian</span></td></tr>
+      <tr><th>Existant</th><td class="cam">nouvelle plateforme à contractualiser</td><td class="app">coût marginal faible si licences et équipe déjà en place [A11]</td><td><span class="pill p-app">Appian</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</details>
+
+<section>
+  <h2>Sources</h2>
+  <p class="muted">Consultées le 7 novembre 2026. Plusieurs pages ont été lues par résumé automatique : revérifier les citations avant de les reprendre dans un livrable officiel. Les copies tierces de contrats sont signalées comme telles.</p>
+  <div class="srcgrid">
+    <div><h3>Camunda [C]</h3><ol class="sources">
+      <li>[C1] <a href="https://docs.camunda.io/docs/apis-tools/orchestration-cluster-api-rest/orchestration-cluster-api-rest-overview/">Orchestration Cluster REST API</a></li>
+      <li>[C2] <a href="https://docs.camunda.io/docs/apis-tools/orchestration-cluster-api-rest/specifications/fail-job/">Jobs : activate, fail, throw error</a></li>
+      <li>[C3] <a href="https://docs.camunda.io/docs/components/concepts/messages/">Messages</a></li>
+      <li>[C4] <a href="https://docs.camunda.io/docs/components/tasklist/api-versions/">Versions de l'API Tasklist</a> · <a href="https://docs.camunda.io/docs/apis-tools/frontend-development/task-applications/introduction-to-task-applications/">Task applications</a></li>
+      <li>[C5] <a href="https://docs.camunda.io/docs/components/modeler/bpmn/business-rule-tasks/">Business rule tasks, DMN</a></li>
+      <li>[C6] <a href="https://docs.camunda.io/docs/reference/data-collection/usage-metrics/">Usage metrics</a></li>
+      <li>[C7] <a href="https://camunda.com/pricing/">Pricing</a> · <a href="https://docs.camunda.io/docs/components/console/manage-plan/available-plans/">Plans</a></li>
+      <li>[C8] <a href="https://docs.camunda.io/docs/components/concepts/process-instance-migration/">Process instance migration</a></li>
+      <li>[C12] <a href="https://docs.camunda.io/docs/components/concepts/variables/">Variables (4 Mo)</a></li>
+      <li>[C15] <a href="https://docs.camunda.io/docs/reference/regions/">Regions</a></li>
+      <li>[C16] <a href="https://docs.camunda.io/docs/components/agentic-orchestration/ai-agents/">AI agents</a> · <a href="https://docs.camunda.io/docs/next/components/connectors/out-of-the-box-connectors/agentic-ai-aiagent/">AI Agent connector</a></li>
+      <li>[C17] <a href="https://docs.camunda.io/docs/components/early-access/alpha/mcp-client/">MCP client (alpha)</a> · <a href="https://docs.camunda.io/docs/apis-tools/processes-mcp/processes-mcp-overview/">Processes MCP Server</a></li>
+    </ol></div>
+    <div><h3>Appian [A]</h3><ol class="sources">
+      <li>[A1] <a href="https://docs.appian.com/suite/help/latest/Web_API_Authentication.html">Web API Authentication</a></li>
+      <li>[A2] <a href="https://docs.appian.com/suite/help/24.3/fnc_system_a_queryprocessanalytics.html">a!queryProcessAnalytics</a> · <a href="https://community.appian.com/discussions/f/integrations/312/are-there-any-out-of-box-api-webservice-exposed-from-appian-for-external-syste">communauté, API de tâches</a></li>
+      <li>[A3] <a href="https://docs.appian.com/suite/help/26.10/Complete_Task_Smart_Service.html">Complete Task Smart Service</a></li>
+      <li>[A4] <a href="https://docs.appian.com/suite/help/26.10/Receive_Message_Event.html">Receive Message Event</a></li>
+      <li>[A5] <a href="https://appmarket.appian.com/listings/task-management-smart-services">Task Management Smart Services (plug-in)</a></li>
+      <li>[A6] <a href="https://docs.appian.com/suite/help/26.10/Call_Integration_Smart_Service.html">Call Integration Smart Service</a></li>
+      <li>[A9] <a href="https://docs.appian.com/suite/help/26.9/Create_a_Decision.html">Decisions</a> · <a href="https://community.appian.com/discussions/f/general/39637/exporting-decision-table-as-dmn/151111">export DMN</a></li>
+      <li>[A10] <a href="https://docs.appian.com/suite/help/latest/Archiving_Processes.html">Archiving</a> · <a href="https://community.appian.com/w/article/3048/how-to-create-memory-efficient-models">Memory efficient models</a></li>
+      <li>[A11] <a href="https://appian.com/pricing">Pricing</a></li>
+      <li>[A12] <a href="https://www.lawinsider.com/clause/users-accounts/_1">Clause « Users; Accounts », copie tierce</a> · <a href="https://www.dlt.com/sites/default/files/documents/2021-03/Appian-On-Premise-Master-Agreement-US-with-AppendixA.pdf">On-Premise Master Agreement, revendeur 2021</a></li>
+      <li>[A13] <a href="https://community.appian.com/discussions/f/process/9196/active-instances-to-stick-with-old-version-of-code---post-deployment">communauté, versions des instances</a></li>
+      <li>[A16] <a href="https://docs.appian.com/suite/help/26.10/agent-studio.html">Agent Studio</a></li>
+    </ol></div>
+    <div><h3>Pega [P]</h3><ol class="sources">
+      <li>[P1] <a href="https://academy.pega.com/topic/pega-digital-experience-api/v5">Pega Academy, DX API</a></li>
+      <li>[P2] <a href="https://forums.pega.com/t/pega-constellation-dx-api-reference/9485">Forum, points d'accès DX API v2</a> · <a href="https://support.pega.com/node/620266">support, wait shape</a></li>
+      <li>[P3] <a href="https://www.businesswire.com/news/home/20260608778439/en/">Infinity 26, prix par dossier</a></li>
+      <li>[P4] <a href="https://forums.pega.com/t/how-to-import-bpmn-2-0-into-pega/9871">Forum, import BPMN</a></li>
+      <li>[P5] <a href="https://academy.pega.com/it/node/103351/in/103331">Pega Academy, versions et dossiers en cours</a></li>
+      <li>[P6] <a href="https://academy.pega.com/it/node/103961/in/103721">Pega Academy, supervision d'agent</a> · <a href="https://forums.pega.com/t/smart-cases-faster-decisions-co-pilot-your-workflow-with-pega-genai-agent-steps/10342">agent steps</a></li>
+      <li>[P7] <a href="https://academy.pega.com/node/6416">Pega Academy, parcours CPLSA</a></li>
+    </ol></div>
+    <div><h3>IBM [I]</h3><ol class="sources">
+      <li>[I1] <a href="https://www.ibm.com/docs/SS8JB4_23.x/com.ibm.wbpm.main.doc/topics/stdrest_procusrtasks.html">Workflow REST, user tasks</a></li>
+      <li>[I2] <a href="https://www.ibm.com/docs/SS8JB4/com.ibm.wbpm.wle.editor.doc/topics/sending_message_events.html">Message events, Event Manager</a></li>
+      <li>[I3] <a href="https://www.ibm.com/software/passportadvantage/about-software-licensing">Passport Advantage, Authorized User</a></li>
+      <li>[I4] <a href="https://www.ibm.com/docs/en/baw/SS8JB4_26.0.x/com.ibm.wbpm.admin.doc/topics/importing_bpmn_processes.html">Import/export BPMN</a></li>
+      <li>[I5] <a href="https://www.ibm.com/docs/SSYHZ8_25.0.1/com.ibm.wbpm.wle.editor.doc/topics/int_ai_agents.html">BAW, AI agents</a></li>
+      <li>[I6] <a href="https://www.ibm.com/docs/en/SS8JB4_22.x/com.ibm.wbpm.admin.doc/topics/tmigrating_snapshotsusingpc.html">Migration d'instances</a></li>
+      <li>[I7] <a href="https://cloud.ibm.com/catalog/services/watsonx-orchestrate">watsonx Orchestrate, catalogue</a></li>
+    </ol></div>
+    <div><h3>Flowable [F]</h3><ol class="sources">
+      <li>[F1] <a href="https://www.flowable.com/open-source/docs/bpmn/ch14-REST">REST API</a></li>
+      <li>[F2] <a href="https://documentation.flowable.com/latest/model/bpmn/reference/external-worker-task">External worker task</a></li>
+      <li>[F3] <a href="https://www.flowable.com/open-source">Open source</a></li>
+      <li>[F4] <a href="https://documentation.flowable.com/latest/ai/ai-orchestration">AI orchestration</a></li>
+      <li>[F5] <a href="https://documentation.flowable.com/latest/reactmodel/bpmn/concept/process-migration">Process migration</a></li>
+      <li>[F6] <a href="https://documentation.flowable.com/latest/develop/external-clients/">Clients externes</a> · <a href="https://www.nuget.org/packages/Flowable.ExternalWorkerClient">NuGet .NET</a></li>
+    </ol></div>
+    <div><h3>Temporal [T] · Conductor [O]</h3><ol class="sources">
+      <li>[T1] <a href="https://docs.temporal.io/encyclopedia/workflow-message-passing">Message passing</a></li>
+      <li>[T2] <a href="https://docs.temporal.io/workflow-execution/workflowid-runid">Workflow ID</a></li>
+      <li>[T3] <a href="https://docs.temporal.io/cloud/limits">Cloud limits</a></li>
+      <li>[T4] <a href="https://docs.temporal.io/workflow-execution/continue-as-new">Continue-As-New</a></li>
+      <li>[T5] <a href="https://temporal.io/pricing">Pricing</a></li>
+      <li>[T6] <a href="https://docs.temporal.io/cloud/regions">Regions</a></li>
+      <li>[T7] <a href="https://docs.temporal.io/worker-versioning">Worker versioning</a></li>
+      <li>[T8] <a href="https://docs.temporal.io/ai/cookbook/">AI cookbook</a></li>
+      <li>[O2] <a href="https://docs.conductor-oss.org/devguide/how-tos/Tasks/choosing-tasks">Tâches système</a></li>
+      <li>[O3] <a href="https://docs.conductor-oss.org/documentation/configuration/eventhandlers.html">Event handlers</a></li>
+      <li>[O4] <a href="https://orkes.io/content/reference-docs/operators/human">Human task (Orkes)</a></li>
+      <li>[O5] <a href="https://docs.conductor-oss.org/devguide/ai/why-conductor.html">IA dans Conductor</a></li>
+      <li>[O6] <a href="https://docs.conductor-oss.org/devguide/how-tos/Workflows/versioning-workflows.html">Versioning</a></li>
+      <li>[O7] <a href="https://orkes.io/pricing">Orkes pricing</a></li>
+    </ol></div>
+    <div><h3>Microsoft [M] · AWS [W]</h3><ol class="sources">
+      <li>[M1] <a href="https://learn.microsoft.com/en-us/azure/durable-task/common/durable-task-external-events">External events</a></li>
+      <li>[M2] <a href="https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-timers">Timers</a></li>
+      <li>[M3] <a href="https://learn.microsoft.com/en-us/azure/durable-task/scheduler/durable-task-scheduler-billing">DTS billing</a></li>
+      <li>[M4] <a href="https://learn.microsoft.com/en-us/azure/durable-task/common/durable-orchestration-versioning">Orchestration versioning</a></li>
+      <li>[M5] <a href="https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-task-overview">Durable Task SDKs</a></li>
+      <li>[M6] <a href="https://learn.microsoft.com/en-us/agent-framework/hosting/durable-extension">Agent Framework, extension durable</a></li>
+      <li>[M7] <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/limits-quotas-regions">Foundry Agent Service, régions</a></li>
+      <li>[M8] <a href="https://learn.microsoft.com/en-us/azure/logic-apps/rules-engine/rules-engine-overview">Logic Apps Rules Engine</a></li>
+      <li>[W1] <a href="https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html">Task token</a></li>
+      <li>[W2] <a href="https://docs.aws.amazon.com/step-functions/latest/dg/service-quotas.html">Quotas</a></li>
+      <li>[W3] <a href="https://aws.amazon.com/step-functions/pricing/">Pricing</a></li>
+      <li>[W4] <a href="https://docs.aws.amazon.com/step-functions/latest/dg/execution-alias-version-associate.html">Versions et alias</a></li>
+      <li>[W5] <a href="https://docs.aws.amazon.com/general/latest/gr/step-functions.html">Endpoints</a></li>
+      <li>[W6] <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents-classic-maintenance-mode.html">Bedrock Agents Classic, maintenance</a></li>
+      <li>[W7] <a href="https://docs.aws.amazon.com/step-functions/latest/dg/connect-bedrockagentcore.html">Step Functions et AgentCore</a></li>
+    </ol></div>
+    <div><h3>Agents, gouvernance [G] · Maison [B]</h3><ol class="sources">
+      <li>[G1] <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic, Building effective agents</a></li>
+      <li>[G2] <a href="https://modelcontextprotocol.io/specification/2025-11-25/server/tools">MCP, Tools</a></li>
+      <li>[G3] <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization">MCP, Authorization</a></li>
+      <li>[G4] <a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/">OWASP LLM01</a></li>
+      <li>[G5] <a href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/">OWASP LLM06</a></li>
+      <li>[G6] <a href="https://www.osfi-bsif.gc.ca/en/guidance/guidance-library/guideline-e-23-model-risk-management-2027">BSIF, E-23</a></li>
+      <li>[G7] <a href="https://www.blakes.com/fr-ca/perspectives/l-amf-publie-sa-ligne-directrice-sur-l-utilisation-de-l-intelligence-artificielle-ce-que-les-insti/">Blakes, ligne directrice IA de l'AMF</a></li>
+      <li>[B1] <a href="https://docs.temporal.io/workflow-execution">Temporal, durable execution</a></li>
+      <li>[B2] <a href="https://docs.dbos.dev/typescript/tutorials/upgrading-workflows.md">DBOS, upgrading workflows</a></li>
+      <li>[B3] <a href="https://github.com/timgit/pg-boss">pg-boss</a> · [B4] <a href="https://docs.bullmq.io/">BullMQ</a> · [B5] <a href="https://hangfire.io/">Hangfire</a></li>
+      <li>[B6] <a href="https://masstransit.io/introduction/v9-announcement">MassTransit v9</a> · [B7] <a href="https://github.com/elsa-workflows/elsa-core">Elsa</a></li>
+      <li>[B8] <a href="https://raw.githubusercontent.com/restatedev/restate/main/LICENSE">Restate, licence</a> · [B9] <a href="https://github.com/dbos-inc/dbos-transact-ts">DBOS Transact</a> · [B10] <a href="https://github.com/inngest/inngest">Inngest</a></li>
+      <li>[B11] <a href="https://www.uber.com/en/blog/open-source-orchestration-tool-cadence-overview/">Uber, Cadence</a> · <a href="https://www.opensourceforu.com/2016/12/netflix-open-sources-microservices-orchestration-engine/">Netflix, Conductor</a></li>
+    </ol></div>
+  </div>
+</section>
+
+</div>
